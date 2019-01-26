@@ -1,0 +1,411 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+# File              : recommender_base.py
+# Author            : Wan Li
+# Date              : 24.01.2019
+# Last Modified Date: 25.01.2019
+# Last Modified By  : Wan Li
+
+import tensorflow as tf
+import numpy as np
+import os  
+
+class _RecommenderGraph(object):
+    """
+        Main graph, i.e. training/serving
+    """
+    class _SubGraph(object):
+        """
+            Component graph, i.e. itemgraph/usergraph/contextgraph etc.
+        """
+        class _Port(object):
+            """
+                Graph I/O abstract class
+            """
+            def __init__(self):
+                """
+                """
+                self.s = None
+        
+        class _InPort(_Port):
+            """
+                Inputs of component graph
+            """
+            def assign(self, subgraph, key):
+                """
+                    Assign input
+                    Params:
+                        subgraph: upstream graph
+                        key: key of the outputs of upstream graph
+                """
+                self.s = {'subgraph':subgraph, 'key':key}
+            
+            def retrieve(self):
+                """
+                    Retrieve input from upstream output
+                """
+                if self.s is None:
+                    return None
+                else:
+                    return self.s['subgraph'][self.s['key']]
+
+        class _OutPort(_Port):
+            """
+                Outputs of component graph
+            """
+            def assign(self, tensor):
+                """
+                    Assign output tensor to port
+                """
+                self.s = tensor
+
+            def retrieve(self):
+                """
+                    Retrieve output tensor of this graph
+                """
+                return self.s
+
+        def __init__(self, rec_graph):
+            """
+                Initializer of component graph
+                Params:
+                    rec_graph: main graph
+            """
+            self._super = rec_graph
+            self._port_store = dict() # inports/outports
+            self._build_funcs = []
+            self._is_building_mode = False # False for connector connecting ports, True for building computation graph
+            self._is_built = False
+            
+        def __getitem__(self, key):
+            """
+                Getter [], get InPorts or OutPorts, behaviour is different in modes
+                e.g. graph_A["port_in"] = graph_B["port_out"] when build_mode is False
+            """
+            assert key in self._port_store, "%s port is not found." % key
+            if self._is_building_mode:
+                assert self._is_built, "[Build Error] Getting a value from an unconstructed graph."
+                return self._port_store[key].retrieve()
+            else:
+                assert isinstance(self._port_store[key], self._OutPort), "[Connect Error] Getting a value from the %s in-port" % key
+                return self, key # corresponds to InPort::assign(subgraph, key)
+        
+        def __setitem__(self, key, value):
+            """
+                Setter [], set InPorts or OutPorts, behaviour is different in modes
+                e.g. graph_A["port_in"] = graph_B["port_out"]
+            """
+            assert key in self._port_store, "%s port is not found." % key
+            if self._is_building_mode:
+                assert isinstance(self._port_store[key], self._OutPort), "[Build Error] Assigning a value to the %s in-port" % key
+                self._port_store[key].assign(value)
+            else:
+                assert isinstance(self._port_store[key], self._InPort), "[Connect Error] Assigning a value to the %s out-port" % key
+                self._port_store[key].assign(value[0], value[1])
+
+        def __call__(self, build_func=None, ins=[], outs=[]):
+            """
+                Caller (), decorator function, to use in a different way
+            """
+            assert isinstance(ins, list), "ins should be a list of strings."
+            assert isinstance(outs, list), "outs should be a list of strings"
+            
+            self._port_store = {}
+            self._build_funcs = []
+            
+            for in_ in ins:
+                self._port_store[in_] = self._InPort()
+            for out_ in outs:
+                self._port_store[out_] = self._OutPort()
+            
+            if build_func is None:
+                def add_build_func(build_func):
+                    self._build_funcs.append(build_func)
+                    return build_func
+                return add_build_func
+            else:
+                self._build_funcs.append(build_func)
+                return build_func
+
+        def extend(self, build_func=None, ins=[], outs=[]):
+            """
+                Decorator function, to append instead
+            """
+            assert isinstance(ins, list), "ins should be a list of strings."
+            assert isinstance(outs, list), "outs should be a list of strings"
+            
+            for in_ in ins:
+                self._port_store[in_] = self._InPort()
+            for out_ in outs:
+                self._port_store[out_] = self._OutPort()
+            
+            if build_func is None:
+                def add_build_func(build_func):
+                    self._build_funcs.append(build_func)
+                    return build_func
+                return add_build_func
+            else:
+                self._build_funcs.append(build_func)
+                return build_func
+
+        def get_intrinsics(self):
+            """
+                Utilizing deep copy
+            """
+            return self._port_store, self._build_funcs
+
+        def copy(self, subgraph):
+            """
+                Deep copy from another component graph
+            """
+            self._port_store, self._build_funcs = subgraph.get_intrinsics()
+
+        def ready_to_build(self):
+            """
+                Mark as building mode
+            """
+            self._is_building_mode = True
+            
+        def build(self):
+            """
+                Do the build stuff of this component graph
+            """
+            if not self._is_built:
+                self._is_built = True
+                for build_func in self._build_funcs:
+                    build_func(self)
+
+        def register_global_input_mapping(self, input_mapping, identifier='default'):
+            """
+                Delegator
+            """
+            self._super.register_input_mapping(input_mapping, identifier)
+        
+        def update_global_input_mapping(self, update_input_mapping, identifier='default'):
+            """
+                Delegator
+            """
+            self._super.update_input_mapping(update_input_mapping, identifier)
+
+        def register_global_operation(self, operation, identifier='default'):
+            """
+                Delegator
+            """
+            self._super.register_operation(operation, identifier)
+
+        def register_global_loss(self, loss, identifier='default'):
+            """
+                Delegator
+            """
+            self._super.register_loss(loss, identifier)
+
+        def register_global_output(self, output, identifier='default'):
+            """
+                Delegator
+            """
+            self._super.register_output(output, identifier)
+        
+        def get_global_input_mapping(self, identifier='default'):
+            """
+                Delegator
+            """
+            self._super.get_input_mapping(identifier)
+
+        def get_global_operations(self, identifier='default'):
+            """
+                Delegator
+            """
+            return self._super.get_operations(identifier)
+
+        def get_global_losses(self, identifier='default'):
+            """
+                Delegator
+            """
+            return self._super.get_losses(identifier)
+            
+        def get_global_outputs(self, identifier='default'):
+            """
+                Delegator
+            """
+            return self._super.get_outputs(identifier)
+
+    class _Connector(object):
+        """
+            Connector of main graph, connectes component graphs
+        """
+        def __init__(self, global_graph):
+            """
+                Initializer
+                Params:
+                    global_graph: main graph
+            """
+            self._global_graph = global_graph
+            self._connect_funcs = []
+        
+        def __call__(self, connect_func=None):
+            """
+                Caller (), decorator function
+            """
+            self._connect_funcs = []
+            if connect_func is None:
+                # creates another decorator function
+                def add_connect_func(connect_func):
+                    self._connect_funcs.append(connect_func)
+                    return connect_func
+                return add_connect_func
+            else:
+                # default usage
+                self._connect_funcs.append(connect_func)
+            return connect_func
+        
+        def extend(self, connect_func=None):
+            """
+                Decorator function, non-reset
+            """
+            if connect_func is None:
+                def add_connect_func(connect_func):
+                    self._connect_funcs.append(connect_func)
+                    return connect_func
+                return add_connect_func
+            else:
+                self._connect_funcs.append(connect_func)
+            return connect_func
+        
+        def build(self):
+            """
+                Perform connection component graphs
+            """
+            assert len(self._connect_funcs) > 0, "Graph connection is not specified"
+            for connect_func in self._connect_funcs:
+                connect_func(self._global_graph)
+
+    def __init__(self):
+        """
+            Initializer of main graph
+        """
+        self._tf_graph = tf.Graph()
+        self.inputgraph = self._SubGraph(self)
+        self.usergraph = self._SubGraph(self)
+        self.itemgraph = self._SubGraph(self)
+        self.contextgraph = self._SubGraph(self)
+        self.fusiongraph = self._SubGraph(self)
+        self.interactiongraph = self._SubGraph(self)
+        self.optimizergraph = self._SubGraph(self)
+
+        self.connector = self._Connector(self)
+        
+        self._operation_identifier_set = set() # operation identifiers for optimizer etc. (retrieved by tf.get_collection())
+        self._loss_identifier_set = set() # tensor identifiers for loss (retrieved by tf.get_collection())
+        self._output_identifier_set = set() # tensor identifiers for output (retrieved by tf.get_collection())
+        self._input_mapping_dict = dict() # dict[identifier](dict[name]tensor) for feed dict
+
+    def __setattr__(self, name, value):
+        """
+            Setter of main graph
+        """        
+        if name in set(['inputgraph', 'usergraph', 'itemgraph', 'contextgraph',
+                      'fusiongraph', 'interactiongraph', 'optimizergraph']):
+            if name in self.__dict__:
+                self.__dict__[name].copy(value)
+            else:
+                self.__dict__[name] = value
+        else:
+            self.__dict__[name] = value
+
+    @property
+    def tf_graph(self):
+        """
+            Property getter            
+        """
+        return self._tf_graph
+
+    def build(self):
+         """
+             Build the main graph
+         """
+         with self._tf_graph.as_default():
+            
+            self.connector.build()
+
+            self.inputgraph.ready_to_build()
+            self.usergraph.ready_to_build()
+            self.itemgraph.ready_to_build()
+            self.contextgraph.ready_to_build()
+            self.fusiongraph.ready_to_build()
+            self.interactiongraph.ready_to_build()
+            self.optimizergraph.ready_to_build()
+            
+            with tf.variable_scope('inputgraph', reuse=tf.AUTO_REUSE):
+                self.inputgraph.build()
+            with tf.variable_scope('usergraph', reuse=tf.AUTO_REUSE):
+                self.usergraph.build()
+            with tf.variable_scope('itemgraph', reuse=tf.AUTO_REUSE):
+                self.itemgraph.build()
+            with tf.variable_scope('contextgraph', reuse=tf.AUTO_REUSE):
+                self.contextgraph.build()
+            with tf.variable_scope('fusiongraph', reuse=tf.AUTO_REUSE):
+                self.fusiongraph.build()
+            with tf.variable_scope('interactiongraph', reuse=tf.AUTO_REUSE):
+                self.interactiongraph.build()
+            with tf.variable_scope('optimizergraph', reuse=tf.AUTO_REUSE):  
+                self.optimizergraph.build()
+
+    def register_input_mapping(self, input_mapping, identifier='default'):
+        """
+            Register identifiers for computation graph
+        """
+        self._input_mapping_dict[identifier] = input_mapping
+    
+    def update_input_mapping(self, update_input_mapping, identifier='default'):
+        """
+            Update identifiers for computation graph
+        """        
+        self._input_mapping_dict[identifier].update(update_input_mapping)
+
+    def register_operation(self, operation, identifier='default'):
+        """
+            Register identifiers for computation graph
+        """
+        self._operation_identifier_set.add(identifier)
+        tf.add_to_collection('recsys.recommender.operations.'+identifier, operation)
+
+    def register_loss(self, loss, identifier='default'):
+        """
+            Register identifiers for computation graph
+        """
+        self._loss_identifier_set.add(identifier)
+        tf.add_to_collection('recsys.recommender.losses.'+identifier, loss)
+
+    def register_output(self, output, identifier='default'):
+        """
+            Register identifiers for computation graph
+        """
+        self._output_identifier_set.add(identifier)
+        tf.add_to_collection('recsys.recommender.outputs.'+identifier, output)
+
+    def get_input_mapping(self, identifier='default'):
+        """
+            Get dict[name]tensor input for computation graph
+        """
+        return self._input_mapping_dict[identifier]
+
+    def get_operations(self, identifier='default'):
+        """
+            Get list of operations for computation graph
+        """
+        with self._tf_graph.as_default():
+            return tf.get_collection('openrec.recommender.operations.'+identifier)
+
+    def get_losses(self, identifier='default'):
+        """
+            Get list of losses for computation graph
+        """
+        with self._tf_graph.as_default():
+            return tf.get_collection('openrec.recommender.losses.'+identifier)
+
+    def get_outputs(self, identifier='default'):
+        """
+            Get list of output tensors for computation graph
+        """
+        with self._tf_graph.as_default():
+            return tf.get_collection('openrec.recommender.outputs.'+identifier)
