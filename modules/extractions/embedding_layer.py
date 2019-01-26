@@ -8,8 +8,7 @@
 
 import tensorflow as tf
 
-def embedding_layer(shape, id_=None, l2_reg=None, init='normal', 
-                subgraph=None, scope=None):
+def apply(shape, id_=None, l2_reg=None, init='normal', subgraph=None, scope=None):
     """
         Embedding layer (aka. latent factor layer)
         Params:

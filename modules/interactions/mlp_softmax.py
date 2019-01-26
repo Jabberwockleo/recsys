@@ -9,7 +9,7 @@
 import tensorflow as tf
 import recsys.modules.extractions.fully_connected_layer as fully_connected_layer
 
-def mlp_softmax(user, item, seq_len, max_seq_len, dims, subgraph, item_bias=None, extra=None,
+def apply(user, item, seq_len, max_seq_len, dims, subgraph, item_bias=None, extra=None,
                l2_reg=None, labels=None, dropout=None, train=None, scope=None):
     """
         MLP softmax layer
@@ -30,7 +30,7 @@ def mlp_softmax(user, item, seq_len, max_seq_len, dims, subgraph, item_bias=None
             in_tensor = tf.concat([in_tensor, extra], axis=1)
         
         if train: 
-            logits = fully_connected_layer(in_tensor=in_tensor,
+            logits = fully_connected_layer.apply(in_tensor=in_tensor,
                                  dims=dims,
                                  subgraph=subgraph,
                                  bias_in=True,
@@ -40,7 +40,7 @@ def mlp_softmax(user, item, seq_len, max_seq_len, dims, subgraph, item_bias=None
                                  l2_reg=l2_reg,
                                  scope='mlp_reg')
         else:
-            logits = fully_connected_layer(in_tensor=in_tensor,
+            logits = fully_connected_layer.apply(in_tensor=in_tensor,
                                  dims=dims,
                                  subgraph=subgraph,
                                  bias_in=True,

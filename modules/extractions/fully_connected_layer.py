@@ -8,7 +8,7 @@
 
 import tensorflow as tf
 
-def fully_connected_layer(in_tensor, dims, subgraph, relu_in=False, relu_mid=True, relu_out=False,
+def apply(in_tensor, dims, subgraph, relu_in=False, relu_mid=True, relu_out=False,
     dropout_in=None, dropout_mid=None, dropout_out=None,
     bias_in=True, bias_mid=True, bias_out=True, batch_norm=False,
     train=True, l2_reg=None, scope=None):
