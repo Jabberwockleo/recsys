@@ -72,7 +72,7 @@ class ModelTrainer(object):
                 all_pos_items += pos_items
                 pos_items, batch_data = eval_sampler.next_batch()
             # invoke all evaluators
-            result = self._eval_manager.full_evaluate(positive_samples=all_pos_items,
+            result = self._eval_manager.full_evaluate(pos_samples=all_pos_items,
                 excluded_positive_samples=[],
                 predictions=np.concatenate(all_scores, axis=0))
             completed_user_count += 1
