@@ -394,21 +394,21 @@ class _RecommenderGraph(object):
             Get list of operations for computation graph
         """
         with self._tf_graph.as_default():
-            return tf.get_collection('openrec.recommender.operations.'+identifier)
+            return tf.get_collection('recsys.recommender.operations.'+identifier)
 
     def get_losses(self, identifier='default'):
         """
             Get list of losses for computation graph
         """
         with self._tf_graph.as_default():
-            return tf.get_collection('openrec.recommender.losses.'+identifier)
+            return tf.get_collection('recsys.recommender.losses.'+identifier)
 
     def get_outputs(self, identifier='default'):
         """
             Get list of output tensors for computation graph
         """
         with self._tf_graph.as_default():
-            return tf.get_collection('openrec.recommender.outputs.'+identifier)
+            return tf.get_collection('recsys.recommender.outputs.'+identifier)
 
 
 class Recommender(object):
