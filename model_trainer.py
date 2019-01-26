@@ -91,7 +91,7 @@ class ModelTrainer(object):
                 eval_iter: perform evalutation every X iters
                 save_iter: perform save ever X iters
         """
-        acc_loss = 0
+        accumulated_loss = 0
         self._eval_manager = EvalManager(evaluators=evaluators)
         
         train_sampler.reset()
@@ -104,7 +104,7 @@ class ModelTrainer(object):
         for _iter in range(total_iter):
             batch_data = train_sampler.next_batch()
             loss = self._train_iter_func(self._model, batch_data)
-            acc_loss += loss
+            accumulated_loss += loss
             self._trained_it += 1
             print('..Trained for %d iterations.' % _iter, end='\r')
             if (_iter + 1) % save_iter == 0:
@@ -113,7 +113,7 @@ class ModelTrainer(object):
                 print(colored('[iter %d]' % self._trained_it, 'red'), 'Model saved.')
             if (_iter + 1) % eval_iter == 0:
                 print(' '*len('..Trained for %d iterations.' % _iter), end='\r')
-                print(colored('[iter %d]' % self._trained_it, 'red'), 'loss: %f' % (acc_loss/eval_iter))
+                print(colored('[iter %d]' % self._trained_it, 'red'), 'loss: %f' % (accumulated_loss/eval_iter))
                 for sampler in eval_samplers:
                     print(colored('..(dataset: %s) evaluation' % sampler.name, 'green'))
                     sys.stdout.flush()
@@ -126,4 +126,4 @@ class ModelTrainer(object):
                         else:
                             print(colored('..(dataset: %s)' % sampler.name, 'green'), \
                                 key, average_result)
-                acc_loss = 0
+                accumulated_loss = 0
