@@ -665,3 +665,6 @@ class Recommender(object):
         results = self._tf_serve_sess.run(ports,
                                  feed_dict=feed_dict)
         return results
+
+if __name__ == "__main__":
+    rec = Recommender()
