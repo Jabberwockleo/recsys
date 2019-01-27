@@ -15,26 +15,26 @@ def apply(in_tensor, dims, subgraph, item_bias=None, extra=None,
         MLP softmax layer
         final layer, registers loss for training and prediction for serving
     """
-    with tf.variable_scope(scope, reuse=tf.AUTO_REUSE):
+    with tf.variable_scope(scope, default_name='MLPSoftmax', reuse=tf.AUTO_REUSE):
         if train: 
             logits = fully_connected_layer.apply(in_tensor=in_tensor,
-                                 dims=dims,
-                                 subgraph=subgraph,
-                                 bias_in=True,
-                                 bias_mid=True,
-                                 bias_out=False,
-                                 dropout_mid=dropout,
-                                 l2_reg=l2_reg,
-                                 scope='mlp_reg')
+                dims=dims,
+                subgraph=subgraph,
+                bias_in=True,
+                bias_mid=True,
+                bias_out=False,
+                dropout_mid=dropout,
+                l2_reg=l2_reg,
+                scope='mlp_reg')
         else:
             logits = fully_connected_layer.apply(in_tensor=in_tensor,
-                                 dims=dims,
-                                 subgraph=subgraph,
-                                 bias_in=True,
-                                 bias_mid=True,
-                                 bias_out=False,
-                                 l2_reg=l2_reg,
-                                 scope='mlp_reg')
+                dims=dims,
+                subgraph=subgraph,
+                bias_in=True,
+                bias_mid=True,
+                bias_out=False,
+                l2_reg=l2_reg,
+                scope='mlp_reg')
 
         if item_bias is not None:
             logits += item_bias
