@@ -17,9 +17,9 @@ mlp_softmax = imp.reload(mlp_softmax)
 variable_average = imp.reload(variable_average)
 concatenate = imp.reload(concatenate)
 
-def VanlillaMlpRec(batch_size, dim_item_embed, max_seq_len, total_items,
+def VanillaMlpRec(batch_size, dim_item_embed, max_seq_len, total_items,
         l2_reg_embed=None, l2_reg_mlp=None, dropout=None, init_model_dir=None,
-        save_model_dir='VanlillaMlpRec/', train=True, serve=False):
+        save_model_dir='VanillaMlpRec/', train=True, serve=False):
     
     rec = recommender_base.Recommender(init_model_dir=init_model_dir,
                       save_model_dir=save_model_dir, train=train, serve=serve)
@@ -137,11 +137,11 @@ eval_iter = 200         # iteration of evaluation
 save_iter = eval_iter   # iteration of saving model   
 
 # model
-model = VanlillaMlpRec(batch_size=batch_size,
+model = VanillaMlpRec(batch_size=batch_size,
     total_items=train_dataset.total_items(),
     max_seq_len=max_seq_len,
     dim_item_embed=dim_item_embed,
-    save_model_dir='VanlillaMlpRec/',
+    save_model_dir='VanillaMlpRec/',
     train=True, 
     serve=True)
 
