@@ -31,7 +31,7 @@ rnn_softmax = imp.reload(rnn_softmax)
 
 def VanillaRnnRec(batch_size, dim_item_embed, max_seq_len, total_items, num_units,
         l2_reg_embed=None, init_model_dir=None,
-        save_model_dir='VanillaRnnRec/', train=True, serve=False):
+        save_model_dir='VanillaRnnRec', train=True, serve=False):
     
     rec = recommender_base.Recommender(init_model_dir=init_model_dir,
                       save_model_dir=save_model_dir, train=train, serve=serve)

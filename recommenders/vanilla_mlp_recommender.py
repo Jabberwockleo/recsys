@@ -8,7 +8,7 @@
 
 def VanillaMlpRec(batch_size, dim_item_embed, max_seq_len, total_items,
         l2_reg_embed=None, l2_reg_mlp=None, dropout=None, init_model_dir=None,
-        save_model_dir='VanillaMlpRec/', train=True, serve=False):
+        save_model_dir='VanillaMlpRec', train=True, serve=False):
     
     rec = recommender_base.Recommender(init_model_dir=init_model_dir,
                       save_model_dir=save_model_dir, train=train, serve=serve)

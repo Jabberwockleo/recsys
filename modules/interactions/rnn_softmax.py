@@ -30,14 +30,20 @@ def apply(sequence, seq_len, total_items, num_units, cell_type='gru', softmax_sa
                                       initializer=tf.contrib.layers.xavier_initializer())
         bias = tf.get_variable('biases', shape=[total_items], trainable=True,
                                     initializer=tf.zeros_initializer())
+        
+        if cell_type == 'gru':
+            rnn_tensor = rnn_state
+        elif cell_type == 'lstm':
+            rnn_tensor = rnn_state[0] # use c state, not h
+        
         if train:
             if softmax_samples is not None:
                 loss = tf.nn.sampled_sparse_softmax_loss(weight=weight, bias=bias, num_sampled=softmax_samples, 
-                                                         num_classes=total_items, labels=label, inputs=rnn_state)
+                                                         num_classes=total_items, labels=label, inputs=rnn_tensor)
             else:
-                logits = tf.matmul(rnn_state, tf.transpose(weight)) + bias
+                logits = tf.matmul(rnn_tensor, tf.transpose(weight)) + bias
                 loss = tf.nn.sparse_softmax_cross_entropy_with_logits(labels=label, logits=logits)
             subgraph.register_global_loss(tf.reduce_mean(loss))
         else:
-            logits = tf.matmul(rnn_state, tf.transpose(weight)) + bias
+            logits = tf.matmul(rnn_tensor, tf.transpose(weight)) + bias
             subgraph.register_global_output(tf.squeeze(logits))

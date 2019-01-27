@@ -31,7 +31,7 @@ rnn_softmax = imp.reload(rnn_softmax)
 
 def VanillaRnnRec(batch_size, dim_item_embed, max_seq_len, total_items, num_units,
         l2_reg_embed=None, init_model_dir=None,
-        save_model_dir='VanillaRnnRec/', train=True, serve=False):
+        save_model_dir='VanillaRnnRec', train=True, serve=False):
     
     rec = recommender_base.Recommender(init_model_dir=init_model_dir,
                       save_model_dir=save_model_dir, train=train, serve=serve)
@@ -148,7 +148,7 @@ model = VanillaRnnRec(batch_size=batch_size,
     max_seq_len=max_seq_len, 
     total_items=train_dataset.total_items(), 
     num_units=num_units, 
-    save_model_dir='VanillaRnnRec/', 
+    save_model_dir='VanillaRnnRec', 
     train=True, serve=True)
 
 # evaluators
@@ -182,3 +182,23 @@ trainer.train(total_iter=total_iter,
     eval_samplers=[test_sampler], 
     evaluators=[auc_evaluator, ndcg_evaluator, recall_evaluator, precision_evaluator])
 
+# serve
+serve_sampler = temporal_sampler.create_evaluation_sampler(dataset=test_dataset, max_seq_len=max_seq_len)
+lbl, input_data = serve_sampler.next_batch()
+print(lbl, input_data)
+output_dict = model.serve(batch_data=input_data)
+print("outputs:", output_dict)
+predict_proba = output_dict['outputs'][0].ravel()
+ind_largest = np.argsort(predict_proba)[-20:]
+print("indices:", ind_largest)
+print("probs:", predict_proba[ind_largest])
+
+# export
+model.export()
+
+# predict using pb model
+output_dict = model.predict_pb(feed_name_dict={
+    'seq_item_id': input_data['seq_item_id'],
+    'seq_len': input_data['seq_len']
+})
+print(output_dict)

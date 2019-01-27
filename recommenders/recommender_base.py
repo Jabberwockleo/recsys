@@ -554,6 +554,64 @@ class Recommender(object):
 
         return {'losses': results[len(operations):len(operations)+len(losses)], 
                 'outputs': results[-len(outputs):]}
+    
+    def export(self, export_model_dir=None, input_mapping_id='default', outputs_id='default'):
+        """
+            Export pb model
+        """
+        if export_model_dir is None:
+            export_model_dir = self._save_model_dir + '_exported_pb'
+        assert self._serve is not None, 'serve is not enabled.'
+        with self.servegraph.tf_graph.as_default():
+            input_mapping_dict = self.S.get_input_mapping(input_mapping_id)
+            input_signature_def_dict = dict(
+                [(k, tf.saved_model.utils.build_tensor_info(v)) for k, v in input_mapping_dict.items()])
+            output_tensor_list = self.S.get_outputs(outputs_id)
+            output_signature_def_dict = dict()
+            for index in range(len(output_tensor_list)):
+                output_signature_def_dict["y_" + str(index)] = tf.saved_model.utils.build_tensor_info(output_tensor_list[index])
+            MODEL_DIR = export_model_dir
+            SIGNATURE_NAME = "serving_default"
+            builder = tf.saved_model.builder.SavedModelBuilder(MODEL_DIR)
+            builder.add_meta_graph_and_variables(self._tf_serve_sess, [tf.saved_model.tag_constants.SERVING], signature_def_map= {
+                    SIGNATURE_NAME: tf.saved_model.signature_def_utils.build_signature_def(
+                        inputs= input_signature_def_dict,
+                        outputs= output_signature_def_dict,
+                        method_name=tf.saved_model.signature_constants.PREDICT_METHOD_NAME)
+                    })
+            builder.save(as_text=False)
+
+    def predict_pb(self, feed_name_dict, export_model_dir=None, input_mapping_id='default', outputs_id='default'):
+        """
+            Predict using pb model
+        """
+        if export_model_dir is None:
+            export_model_dir = self._save_model_dir + '_exported_pb'
+        assert self._serve is not None, 'serve is not enabled.'
+        with tf.Session(graph=tf.Graph()) as sess:
+            input_mapping_dict = self.S.get_input_mapping(input_mapping_id)
+            input_signature_def_dict = dict(
+                [(k, None) for k, _ in input_mapping_dict.items()])
+            output_tensor_list = self.S.get_outputs(outputs_id)
+            output_signature_def_dict = dict()
+            for index in range(len(output_tensor_list)):
+                output_signature_def_dict["y_" + str(index)] = None
+            MODEL_DIR = export_model_dir
+            SIGNATURE_NAME = "serving_default"
+            meta_graph_def = tf.saved_model.loader.load(sess, [tf.saved_model.tag_constants.SERVING], MODEL_DIR)
+            signature = meta_graph_def.signature_def
+            input_tensor_dict = dict()
+            output_tensor_dict = dict()
+            for k in input_signature_def_dict.keys():
+                input_tensor_dict[k] = sess.graph.get_tensor_by_name(
+                    signature[SIGNATURE_NAME].inputs[k].name)
+            for k in output_signature_def_dict.keys():
+                output_tensor_dict[k] = sess.graph.get_tensor_by_name(
+                    signature[SIGNATURE_NAME].outputs[k].name)
+            feed_dict = dict([(input_tensor_dict[name], val) for name, val in feed_name_dict.items()])
+            return dict(list(zip(
+                output_signature_def_dict.keys(),
+                sess.run(list(output_tensor_dict.values()), feed_dict=feed_dict))))
 
     def save(self, save_model_dir=None, global_step=None):
         """
