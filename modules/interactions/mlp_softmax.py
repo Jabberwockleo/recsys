@@ -53,8 +53,7 @@ def apply(user, item, seq_len, max_seq_len, dims, subgraph, item_bias=None, extr
             logits += item_bias
         
         if train:
-            loss = tf.nn.sparse_softmax_cross_entropy_with_logits(labels=labels,
-                                                           logits=logits)
+            loss = tf.nn.sparse_softmax_cross_entropy_with_logits(labels=labels, logits=logits)
             subgraph.register_global_loss(tf.reduce_mean(loss))
         else:
             subgraph.register_global_output(logits)
