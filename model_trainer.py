@@ -92,7 +92,7 @@ class ModelTrainer(object):
                 save_iter: perform save ever X iters
         """
         accumulated_loss = 0
-        self._eval_manager = EvalManager(evaluators=evaluators)
+        self._eval_manager = EvaluationManager(evaluators=evaluators)
         
         train_sampler.reset()
         for sampler in eval_samplers:
@@ -103,7 +103,7 @@ class ModelTrainer(object):
         
         for _iter in range(total_iter):
             batch_data = train_sampler.next_batch()
-            loss = self._train_iter_func(self._model, batch_data)
+            loss = self._train_loss_func(self._model, batch_data)
             accumulated_loss += loss
             self._trained_it += 1
             print('..Trained for %d iterations.' % _iter, end='\r')
