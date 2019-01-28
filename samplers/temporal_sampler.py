@@ -70,7 +70,7 @@ def create_evaluation_sampler(dataset, max_seq_len, seed=100):
                 pad_train_items = np.zeros(max_seq_len, np.int32)
                 pad_train_items[:len(train_items)] = train_items
                 input_npy[0] = (pad_train_items, len(train_items)) # input_npy is 1 length array
-                yield [train_items[-1]], input_npy
+                yield [item_list[-1]], input_npy
                 yield [], [] # signals end of one user after batches
             yield None, None # signal finish
             
