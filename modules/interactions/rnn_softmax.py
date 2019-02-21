@@ -8,7 +8,7 @@
 
 import tensorflow as tf
 
-def apply(sequence, seq_len, total_items, num_units, cell_type='gru', softmax_samples=None,
+def apply(sequence, seq_len, total_items, num_units, cell_type='gru', softmax_samples=100,
         label=None, train=True, subgraph=None, scope=None):
     """
         RNN softmax layer
