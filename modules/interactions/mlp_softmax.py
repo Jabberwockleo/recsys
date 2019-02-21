@@ -10,7 +10,7 @@ import tensorflow as tf
 import recsys.modules.extractions.fully_connected_layer as fully_connected_layer
 
 def apply(in_tensor, dims, subgraph, item_bias=None, extra=None,
-               l2_reg=None, labels=None, dropout=None, train=None, scope=None):
+        l2_reg=None, labels=None, dropout=None, train=None, scope=None):
     """
         MLP softmax layer
         final layer, registers loss for training and prediction for serving

@@ -555,9 +555,13 @@ class Recommender(object):
         return {'losses': results[len(operations):len(operations)+len(losses)], 
                 'outputs': results[-len(outputs):]}
     
-    def export(self, export_model_dir=None, input_mapping_id='default', outputs_id='default'):
+    def export(self, export_model_dir=None, input_mapping_id='default', outputs_id='default',
+            top_k=None):
         """
             Export pb model
+            Params:
+                top_k: None or int, if not None, if output is one tensor, apply tf.nn.top_k
+                       and outputs y_values and y_indices instead
         """
         if export_model_dir is None:
             export_model_dir = self._save_model_dir + '_exported_pb'
@@ -566,10 +570,17 @@ class Recommender(object):
             input_mapping_dict = self.S.get_input_mapping(input_mapping_id)
             input_signature_def_dict = dict(
                 [(k, tf.saved_model.utils.build_tensor_info(v)) for k, v in input_mapping_dict.items()])
-            output_tensor_list = self.S.get_outputs(outputs_id)
-            output_signature_def_dict = dict()
-            for index in range(len(output_tensor_list)):
-                output_signature_def_dict["y_" + str(index)] = tf.saved_model.utils.build_tensor_info(output_tensor_list[index])
+            output_tensor_list = self.S.get_outputs(outputs_id) # original outputs
+            output_signature_def_dict = dict() # signature
+
+            if top_k is not None and isinstance(top_k, int) and len(output_tensor_list) == 1:
+                logits_top_values, logits_top_indices = tf.nn.top_k(tf.squeeze(output_tensor_list[0]), k=top_k)
+                output_signature_def_dict["y_values"] = tf.saved_model.utils.build_tensor_info(logits_top_values)
+                output_signature_def_dict["y_indices"] = tf.saved_model.utils.build_tensor_info(logits_top_indices)
+            else:
+                for index in range(len(output_tensor_list)):
+                    output_signature_def_dict["y_" + str(index)] = tf.saved_model.utils.build_tensor_info(output_tensor_list[index])
+
             MODEL_DIR = export_model_dir
             SIGNATURE_NAME = "serving_default"
             builder = tf.saved_model.builder.SavedModelBuilder(MODEL_DIR)
@@ -581,9 +592,12 @@ class Recommender(object):
                     })
             builder.save(as_text=False)
 
-    def predict_pb(self, feed_name_dict, export_model_dir=None, input_mapping_id='default', outputs_id='default'):
+    def predict_pb(self, feed_name_dict, export_model_dir=None, input_mapping_id='default', outputs_id='default',
+            top_k=None):
         """
             Predict using pb model
+            Params:
+                top_k: None or not, if not none, model has two outputs: y_values and y_indices
         """
         if export_model_dir is None:
             export_model_dir = self._save_model_dir + '_exported_pb'
@@ -594,8 +608,13 @@ class Recommender(object):
                 [(k, None) for k, _ in input_mapping_dict.items()])
             output_tensor_list = self.S.get_outputs(outputs_id)
             output_signature_def_dict = dict()
-            for index in range(len(output_tensor_list)):
-                output_signature_def_dict["y_" + str(index)] = None
+            if top_k is None:
+                for index in range(len(output_tensor_list)):
+                    output_signature_def_dict["y_" + str(index)] = None
+            else:
+                output_signature_def_dict["y_values"] = None
+                output_signature_def_dict["y_indices"] = None
+
             MODEL_DIR = export_model_dir
             SIGNATURE_NAME = "serving_default"
             meta_graph_def = tf.saved_model.loader.load(sess, [tf.saved_model.tag_constants.SERVING], MODEL_DIR)

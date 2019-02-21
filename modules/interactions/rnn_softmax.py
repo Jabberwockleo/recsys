@@ -9,7 +9,7 @@
 import tensorflow as tf
 
 def apply(sequence, seq_len, total_items, num_units, cell_type='gru', softmax_samples=None,
-                   label=None, train=True, subgraph=None, scope=None):
+        label=None, train=True, subgraph=None, scope=None):
     """
         RNN softmax layer
         final layer, registers loss for training and prediction for serving
@@ -48,4 +48,4 @@ def apply(sequence, seq_len, total_items, num_units, cell_type='gru', softmax_sa
             subgraph.register_global_loss(tf.reduce_mean(loss))
         else:
             logits = tf.matmul(rnn_tensor, tf.transpose(weight)) + bias
-            subgraph.register_global_output(tf.squeeze(logits))
+            subgraph.register_global_output(logits)
