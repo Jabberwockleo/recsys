@@ -17,7 +17,7 @@ def apply(sequence, seq_len, total_items, num_units, cell_type='gru', softmax_sa
     with tf.variable_scope(scope, default_name='RNNSoftmax', reuse=tf.AUTO_REUSE):
         if cell_type == 'gru':
             rnn_cell = tf.nn.rnn_cell.GRUCell(num_units)
-        elif cell_type == 'lstm':
+        elif cell_type == 'lstm-c' or cell_type == 'lstm-h':
             rnn_cell = tf.nn.rnn_cell.LSTMCell(num_units)
         else:
             assert False, "Invalid RNN cell type."
@@ -33,8 +33,10 @@ def apply(sequence, seq_len, total_items, num_units, cell_type='gru', softmax_sa
         
         if cell_type == 'gru':
             rnn_tensor = rnn_state
-        elif cell_type == 'lstm':
-            rnn_tensor = rnn_state[0] # use c state, not h
+        elif cell_type == 'lstm-c':
+            rnn_tensor = rnn_state[0]
+        elif cell_type == 'lstm-h':
+            rnn_tensor = rnn_state[1]
         
         if train:
             if softmax_samples is not None:
