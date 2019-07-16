@@ -1,2 +1,3 @@
-# recsys
-A recommendation system framework inspired by OpenRec
+# Recsys
+
+A framework for recommendation
