@@ -12,8 +12,8 @@ def apply(tensor_array):
     """
         Concatenate feature tensors
         Params:
-            tensor_array: array of tensors shaped (batch_size, X)
+            tensor_array: array of tensors shaped (batch_size, dx, D)
         Return:
-            tensor of concatenated representation, shaped (batch_size, sum(X))
+            tensor of concatenated representation, shaped (batch_size, sum(dx), D)
     """
     return tf.concat(tensor_array, axis=1)
