@@ -85,7 +85,7 @@ class EvaluationManager(object):
 
         return results
 
-    def partial_evalute(self, pos_scores, neg_scores):
+    def partial_evaluate(self, pos_scores, neg_scores):
         """
             Partial evaluate some items
             Return:
