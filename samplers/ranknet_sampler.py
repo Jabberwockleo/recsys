@@ -108,7 +108,7 @@ def create_evaluation_sampler(dataset, featurizer, max_pos_neg_per_user=20, seed
                 if len(neg_items) == 0:
                     continue
                 for pos_item in pos_items:
-                    sample = np.zeros(1, dtype=[('x1', (np.float32, dim))])
+                    sample = np.zeros(1, dtype=[('x', (np.float32, dim))])
                     x = featurizer.featurize(user_id, pos_item)
                     sample[0] = (x)
                     input_data = None
@@ -119,7 +119,7 @@ def create_evaluation_sampler(dataset, featurizer, max_pos_neg_per_user=20, seed
                     labels = [1]
                     yield labels, input_data
                 for neg_item in neg_items:
-                    sample = np.zeros(1, dtype=[('x1', (np.float32, dim))])
+                    sample = np.zeros(1, dtype=[('x', (np.float32, dim))])
                     x = featurizer.featurize(user_id, neg_item)
                     sample[0] = (x)
                     input_data = None
