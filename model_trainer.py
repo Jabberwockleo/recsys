@@ -93,14 +93,17 @@ class ModelTrainer(object):
             while batch_data is not None:
                 pos_scores = []
                 neg_scores = []
+                all_scores = []
+                all_labels = []
                 while len(batch_data) > 0: # batch_data = [] indicates data of one user is all sampled
-                    all_scores = self._evaluate_predict_func(self._model, batch_data)
-                    for idx in range(len(data_labels)):
-                        if data_labels[idx] == 1:
-                            pos_scores.append(all_scores[idx])
-                        elif data_labels[idx] == -1:
-                            neg_scores.append(all_scores[idx])
+                    all_labels.extend(data_labels)
+                    all_scores.extend(self._evaluate_predict_func(self._model, batch_data))
                     data_labels, batch_data = eval_sampler.next_batch()
+                for idx in range(len(data_labels)):
+                    if data_labels[idx] == 1:
+                        pos_scores.append(all_scores[idx])
+                    elif data_labels[idx] == -1:
+                        neg_scores.append(all_scores[idx])
                 # invoke all evaluators
                 result = self._eval_manager.partial_evaluate(pos_scores, neg_scores)
                 completed_user_count += 1
