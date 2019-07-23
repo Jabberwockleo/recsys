@@ -58,30 +58,59 @@ class ModelTrainer(object):
             Params:
                 eval_sampler: data sampler for evaluation
         """
-        metric_results = {} # dict[evaluator_name]list(evaluation result for users)
-        for evaluator in self._eval_manager.evaluators:
-            metric_results[evaluator.name] = []
+        if eval_sampler.evaluation_type() == "FULL":
+            metric_results = {} # dict[evaluator_name]list(evaluation result for users)
+            for evaluator in self._eval_manager.evaluators:
+                metric_results[evaluator.name] = []
         
-        completed_user_count = 0
-        pos_items, batch_data = eval_sampler.next_batch()
-        while batch_data is not None:
-            all_scores = []
-            all_pos_items = []
-            while len(batch_data) > 0: # batch_data = [] indicates data of one user is all sampled
-                all_scores.append(self._evaluate_predict_func(self._model, batch_data))
-                all_pos_items += pos_items
-                pos_items, batch_data = eval_sampler.next_batch()
-            # invoke all evaluators
-            result = self._eval_manager.full_evaluate(pos_samples=all_pos_items,
-                excluded_positive_samples=[],
-                predictions=np.concatenate(all_scores, axis=0))
-            completed_user_count += 1
-            print('...Evaluated %d users' % completed_user_count, end='\r')
-            for key in result:
-                metric_results[key].append(result[key])
+            completed_user_count = 0
             pos_items, batch_data = eval_sampler.next_batch()
-            
-        return metric_results
+            while batch_data is not None:
+                all_scores = []
+                all_pos_items = []
+                while len(batch_data) > 0: # batch_data = [] indicates data of one user is all sampled
+                    all_scores.append(self._evaluate_predict_func(self._model, batch_data))
+                    all_pos_items += pos_items
+                    pos_items, batch_data = eval_sampler.next_batch()
+                # invoke all evaluators
+                result = self._eval_manager.full_evaluate(pos_samples=all_pos_items,
+                    excluded_positive_samples=[],
+                    predictions=np.concatenate(all_scores, axis=0))
+                completed_user_count += 1
+                print('...Evaluated %d users' % completed_user_count, end='\r')
+                for key in result:
+                    metric_results[key].append(result[key])
+                pos_items, batch_data = eval_sampler.next_batch()
+            return metric_results
+        elif eval_sampler.evaluation_type() == "SAMPLED":
+            metric_results = {} # dict[evaluator_name]list(evaluation result for users)
+            for evaluator in self._eval_manager.evaluators:
+                metric_results[evaluator.name] = []
+        
+            completed_user_count = 0
+            # data_labels [1, 1, ... -1, -1] 1 for pos_item, -1 for neg_item r.s.t a user
+            data_labels, batch_data = eval_sampler.next_batch()
+            while batch_data is not None:
+                pos_scores = []
+                neg_scores = []
+                while len(batch_data) > 0: # batch_data = [] indicates data of one user is all sampled
+                    all_scores = self._evaluate_predict_func(self._model, batch_data)
+                    for idx in range(len(data_labels)):
+                        if data_labels[idx] == 1:
+                            pos_scores.append(all_scores[idx])
+                        elif data_labels[idx] == -1:
+                            neg_scores.append(all_scores[idx])
+                    data_labels, batch_data = eval_sampler.next_batch()
+                # invoke all evaluators
+                result = self._eval_manager.partial_evaluate(pos_scores, neg_scores)
+                completed_user_count += 1
+                print('...Evaluated %d users' % completed_user_count, end='\r')
+                for key in result:
+                    metric_results[key].append(result[key])
+                pos_items, batch_data = eval_sampler.next_batch()
+            return metric_results
+        else:
+            raise "Sampler's evaluation_type() is unrecognized."
 
     def train(self, total_iter, eval_iter, save_iter, train_sampler, eval_samplers=[], evaluators=[]):
         """

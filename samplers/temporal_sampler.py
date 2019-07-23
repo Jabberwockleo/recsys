@@ -11,6 +11,15 @@ import numpy as np
 
 from recsys.samplers.sampler_base import Sampler
 
+def evaluation_type():
+    """
+        Evaluation type used for model evaluation
+        Return:
+            FULL/SAMPLED
+    """
+    return "FULL"
+
+
 def create_training_sampler(dataset, batch_size, max_seq_len, num_process=5, seed=100):
     """
         Creates a temporal sampler for training
