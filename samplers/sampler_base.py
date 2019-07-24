@@ -33,7 +33,7 @@ class Sampler(object):
     """
         Multi-process sampler
     """
-    def __init__(self, dataset=None, generate_batch=None, num_process=5):
+    def __init__(self, dataset=None, evaluation_type=None, generate_batch=None, num_process=5):
         """
             Initializer
         """
@@ -46,6 +46,13 @@ class Sampler(object):
         self._num_process = num_process
         self._generate_batch = generate_batch
         self.name = self._dataset.name
+        self.evaluation_type = evaluation_type
+
+    def evaluation_type(self):
+        """
+            Return evaluation type, FULL/SAMPLED
+        """
+        return self.evaluation_type
         
     def next_batch(self):
         """

@@ -11,15 +11,6 @@ import numpy as np
 
 from recsys.samplers.sampler_base import Sampler
 
-def evaluation_type():
-    """
-        Evaluation type used for model evaluation
-        Return:
-            FULL/SAMPLED
-    """
-    return "FULL"
-
-
 def create_training_sampler(dataset, batch_size, max_seq_len, num_process=5, seed=100):
     """
         Creates a temporal sampler for training
@@ -51,7 +42,7 @@ def create_training_sampler(dataset, batch_size, max_seq_len, num_process=5, see
                 input_npy[ind] = (padded_train_items, len(train_items), item_list[predict_pos])
             yield input_npy
     
-    s = Sampler(dataset=dataset, generate_batch=batch, num_process=num_process)
+    s = Sampler(dataset=dataset, generate_batch=batch, evaluation_type="FULL", num_process=num_process)
     
     return s
 
@@ -83,6 +74,6 @@ def create_evaluation_sampler(dataset, max_seq_len, seed=100):
                 yield [], [] # signals end of one user after batches
             yield None, None # signal finish
             
-    s = Sampler(dataset=dataset, generate_batch=batch, num_process=1)
+    s = Sampler(dataset=dataset, generate_batch=batch, evaluation_type="FULL", num_process=1)
     
     return s

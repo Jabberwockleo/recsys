@@ -11,16 +11,6 @@ import numpy as np
 
 from recsys.samplers.sampler_base import Sampler
 
-
-def evaluation_type():
-    """
-        Evaluation type used for model evaluation
-        Return:
-            FULL/SAMPLED
-    """
-    return "SAMPLED"
-
-
 def create_training_sampler(dataset, featurizer, max_pos_neg_per_user=5, num_process=5, seed=100):
     """
         Creates a ranknet sampler for training:
@@ -68,7 +58,7 @@ def create_training_sampler(dataset, featurizer, max_pos_neg_per_user=5, num_pro
                     input_data[0] = (pos_x, neg_x, 1)
                     input_data[1] = (pos_x, neg_x, 0)
                     yield input_data # (2,) per iteration
-    s = Sampler(dataset=dataset, generate_batch=batch, num_process=num_process)
+    s = Sampler(dataset=dataset, generate_batch=batch, evaluation_type="SAMPLED", num_process=num_process)
     
     return s
 
@@ -131,6 +121,6 @@ def create_evaluation_sampler(dataset, featurizer, max_pos_neg_per_user=20, seed
                     yield labels, input_data # (1,) per iteration
                 yield [], [] # signals end of one user after batches
             yield None, None # signal finish
-    s = Sampler(dataset=dataset, generate_batch=batch, num_process=num_process)
+    s = Sampler(dataset=dataset, generate_batch=batch, evaluation_type="SAMPLED", num_process=num_process)
     
     return s

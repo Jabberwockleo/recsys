@@ -19,7 +19,8 @@ class Dataset(object):
             Initializer
             Params:
                 raw_data: np.ndarray, dtype=[('user_id', '<i4'), ('item_id', '<i4'), ('timestamp', '<i4'), ('label', '<i4')]), ts and label are optional
-                    such as np.array([(1, 2, 3)], dtype=[('user_id', '<i4'), ('item_id', '<i4'), ('ts', '<i4')])
+                    such as np.array([(1, 2, 3)], dtype=[('user_id', '<i4'), ('item_id', '<i4'), ('timestamp', '<i4'), ('label', '<i4')])
+                    label should be 1 or -1
         """
         random.seed(seed)
         self.name = name
