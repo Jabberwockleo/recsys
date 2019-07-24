@@ -19,16 +19,16 @@ def LinearRankNetRec(feature_dim, init_model_dir=None, save_model_dir='LinearRan
 
     @rec.traingraph.inputgraph(outs=['X1', 'X2', 'dy'])
     def train_input_graph(subgraph):
-        subgraph['X1'] = tf.placeholder(tf.float32, shape=[2, feature_dim], name="X1")
-        subgraph['X2'] = tf.placeholder(tf.float32, shape=[2, feature_dim], name="X2")
-        subgraph['dy'] = tf.placeholder(tf.float32, shape=[2, feature_dim], name="dy")
+        subgraph['X1'] = tf.placeholder(tf.float32, shape=[None, feature_dim], name="X1")
+        subgraph['X2'] = tf.placeholder(tf.float32, shape=[None, feature_dim], name="X2")
+        subgraph['dy'] = tf.placeholder(tf.float32, shape=[None, 1], name="dy")
         subgraph.register_global_input_mapping({'x1': subgraph['X1'],
                                                 'x2': subgraph['X2'],
                                                 'label': subgraph['dy']})
 
     @rec.servegraph.inputgraph(outs=['X'])
     def serve_input_graph(subgraph):
-        subgraph['X'] = tf.placeholder(tf.float32, shape=[1, feature_dim], name="X")
+        subgraph['X'] = tf.placeholder(tf.float32, shape=[None, feature_dim], name="X")
         subgraph.register_global_input_mapping({'x': subgraph['X']})
     
     @rec.traingraph.fusiongraph(ins=['X1', 'X2'], outs=['dy_tilde'])
@@ -47,7 +47,7 @@ def LinearRankNetRec(feature_dim, init_model_dir=None, save_model_dir='LinearRan
     
     @rec.traingraph.interactiongraph(ins=['dy_tilde', 'dy'])
     def train_interaction_graph(subgraph):
-        loss = tf.nn.sigmoid_cross_entropy_with_logits(labels=subgraph['dy'], logits=['dy_tilde'], name='loss')
+        loss = tf.nn.sigmoid_cross_entropy_with_logits(labels=subgraph['dy'], logits=subgraph['dy_tilde'], name='loss')
         subgraph.register_global_loss(tf.reduce_mean(loss))
 
     @rec.servegraph.fusiongraph(ins=['X'])
