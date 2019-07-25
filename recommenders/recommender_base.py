@@ -556,7 +556,7 @@ class Recommender(object):
                 'outputs': results[-len(outputs):]}
     
     def export(self, export_model_dir=None, input_mapping_id='default', outputs_id='default',
-            top_k=None):
+            top_k=None, as_text=False):
         """
             Export pb model
             Params:
@@ -590,7 +590,7 @@ class Recommender(object):
                         outputs= output_signature_def_dict,
                         method_name=tf.saved_model.signature_constants.PREDICT_METHOD_NAME)
                     })
-            builder.save(as_text=False)
+            builder.save(as_text=as_text)
 
     def predict_pb(self, feed_name_dict, export_model_dir=None, input_mapping_id='default', outputs_id='default',
             top_k=None):

@@ -62,7 +62,7 @@ def LinearRankNetRec(feature_dim, init_model_dir=None, save_model_dir='LinearRan
     @rec.traingraph.optimizergraph
     def optimizer_graph(subgraph):
         losses = tf.add_n(subgraph.get_global_losses())
-        optimizer = tf.train.GradientDescentOptimizer(learning_rate=0.001)
+        optimizer = tf.train.GradientDescentOptimizer(learning_rate=0.1)
         subgraph.register_global_operation(optimizer.minimize(losses))
 
     @rec.traingraph.connector

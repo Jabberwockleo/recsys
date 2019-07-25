@@ -106,7 +106,6 @@ class ModelTrainer(object):
                     elif all_labels[idx] == -1:
                         neg_scores.append(all_scores[idx])
                 # invoke all evaluators
-                print("ppp", pos_scores, neg_scores)
                 result = self._eval_manager.partial_evaluate(pos_scores, neg_scores)
                 completed_user_count += 1
                 print('...Evaluated %d users' % completed_user_count, end='\r')
