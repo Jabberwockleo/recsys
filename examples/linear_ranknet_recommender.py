@@ -9,7 +9,7 @@
 import imp
 import sys
 import numpy as np
-sys.path = list(set(sys.path + ['/Users/leowan/Documents/Workspace/algorithms/']))
+sys.path = list(set(sys.path + ['../../']))
 
 import os
 os.environ["CUDA_VISIBLE_DEVICES"]="6"
@@ -63,7 +63,7 @@ class Featurizer(featurizer.FeaturizerBase):
             Dim of X
         """
         return 4
-    
+
     def featurize(self, user_id, item_id):
         if user_id != 0:
             raise "error"
@@ -103,11 +103,11 @@ trainer = model_trainer.ModelTrainer(model=model)
 # train
 import datetime
 print(datetime.datetime.now())
-trainer.train(total_iter=100, 
+trainer.train(total_iter=100,
                     eval_iter=1,
                     save_iter=5,
                     train_sampler=train_sampler,
-                    eval_samplers=[test_sampler], 
+                    eval_samplers=[test_sampler],
                     evaluators=[auc_evaluator])
 print(datetime.datetime.now())
 
