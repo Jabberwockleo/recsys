@@ -97,14 +97,16 @@ class ModelTrainer(object):
                 all_labels = []
                 while len(batch_data) > 0: # batch_data = [] indicates data of one user is all sampled
                     all_labels.extend(data_labels)
-                    all_scores.extend(self._evaluate_predict_func(self._model, batch_data))
+                    outputs = self._evaluate_predict_func(self._model, batch_data)
+                    all_scores.extend(np.atleast_1d(outputs))
                     data_labels, batch_data = eval_sampler.next_batch()
-                for idx in range(len(data_labels)):
-                    if data_labels[idx] == 1:
+                for idx in range(len(all_labels)):
+                    if all_labels[idx] == 1:
                         pos_scores.append(all_scores[idx])
-                    elif data_labels[idx] == -1:
+                    elif all_labels[idx] == -1:
                         neg_scores.append(all_scores[idx])
                 # invoke all evaluators
+                print("ppp", pos_scores, neg_scores)
                 result = self._eval_manager.partial_evaluate(pos_scores, neg_scores)
                 completed_user_count += 1
                 print('...Evaluated %d users' % completed_user_count, end='\r')

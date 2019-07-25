@@ -16,7 +16,7 @@ def create_training_sampler(dataset, batch_size, max_seq_len, num_process=5, see
         Creates a temporal sampler for training
     """
     random.seed(seed)
-    def batch(dataset, max_seq_len=max_seq_len, batch_size=batch_size):
+    def batch(dataset, featurizer=None, max_seq_len=max_seq_len, batch_size=batch_size):
         """
             Batcher function
             Returns: ndarray shaped (batch_size,)
@@ -51,7 +51,7 @@ def create_evaluation_sampler(dataset, max_seq_len, seed=100):
         Creates a temporal sampler for evaluation
     """
     random.seed(seed)
-    def batch(dataset, max_seq_len=max_seq_len):
+    def batch(dataset, featurizer=None, max_seq_len=max_seq_len):
         """
             Batcher
             Returns:

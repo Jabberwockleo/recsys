@@ -66,7 +66,6 @@ class EvaluationManager(object):
             for pos_ind in range(pos_scores_len):
                 if pos_scores[pos_ind] < score:
                     rank_above[pos_ind] += 1
-
         return rank_above, len(neg_scores)
 
     def full_evaluate(self, pos_samples, excluded_positive_samples, predictions):

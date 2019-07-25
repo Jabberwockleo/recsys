@@ -671,8 +671,8 @@ class Recommender(object):
         elif type(batch_data) is dict:
             keys = batch_data.keys()
         else:
-            assert False, "Invalid batch data format"
-            
+            assert False, "Invalid batch data format, data: {}".format(batch_data)
+
         for key in keys:
             feed_dict[input_map[key]] = batch_data[key]
         return feed_dict

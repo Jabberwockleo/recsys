@@ -47,7 +47,7 @@ def create_training_sampler(dataset, featurizer, max_pos_neg_per_user=5, num_pro
             if len(pos_items) == 0:
                 continue
             # get negative items
-            neg_items = dataset.get_negative_items(user_id, sort=False)
+            neg_items = dataset.get_negative_items(user_id)
             neg_items = random.sample(neg_items, max_pos_neg_per_user)
             if len(neg_items) == 0:
                 continue
@@ -56,9 +56,10 @@ def create_training_sampler(dataset, featurizer, max_pos_neg_per_user=5, num_pro
                     pos_x = featurizer.featurize(user_id, pos_item)
                     neg_x = featurizer.featurize(user_id, neg_item)
                     input_data[0] = (pos_x, neg_x, 1)
-                    input_data[1] = (pos_x, neg_x, 0)
+                    input_data[1] = (neg_x, pos_x, 0)
                     yield input_data # (2,) per iteration
-    s = Sampler(dataset=dataset, generate_batch=batch, evaluation_type="SAMPLED", num_process=num_process)
+        raise "unreachable!"
+    s = Sampler(dataset=dataset, generate_batch=batch, evaluation_type="SAMPLED", featurizer=featurizer, num_process=num_process)
     
     return s
 
@@ -93,14 +94,14 @@ def create_evaluation_sampler(dataset, featurizer, max_pos_neg_per_user=20, seed
                 if len(pos_items) == 0:
                     continue
                 # get negative items
-                neg_items = dataset.get_negative_items(user_id, sort=False)
+                neg_items = dataset.get_negative_items(user_id)
                 neg_items = random.sample(neg_items, max_pos_neg_per_user)
                 if len(neg_items) == 0:
                     continue
                 for pos_item in pos_items:
                     sample = np.zeros(1, dtype=[('x', (np.float32, dim))])
                     x = featurizer.featurize(user_id, pos_item)
-                    sample[0] = (x)
+                    sample[0] = tuple([x])
                     input_data = None
                     if input_data is None:
                         input_data = sample
@@ -111,7 +112,7 @@ def create_evaluation_sampler(dataset, featurizer, max_pos_neg_per_user=20, seed
                 for neg_item in neg_items:
                     sample = np.zeros(1, dtype=[('x', (np.float32, dim))])
                     x = featurizer.featurize(user_id, neg_item)
-                    sample[0] = (x)
+                    sample[0] = tuple([x])
                     input_data = None
                     if input_data is None:
                         input_data = sample
@@ -121,6 +122,6 @@ def create_evaluation_sampler(dataset, featurizer, max_pos_neg_per_user=20, seed
                     yield labels, input_data # (1,) per iteration
                 yield [], [] # signals end of one user after batches
             yield None, None # signal finish
-    s = Sampler(dataset=dataset, generate_batch=batch, evaluation_type="SAMPLED", num_process=num_process)
+    s = Sampler(dataset=dataset, generate_batch=batch, evaluation_type="SAMPLED", featurizer=featurizer, num_process=1)
     
     return s
