@@ -3,7 +3,7 @@
 # File              : linear_recommender.py
 # Author            : Wan Li
 # Date              : 23.07.2019
-# Last Modified Date: 23.07.2019
+# Last Modified Date: 26.07.2019
 # Last Modified By  : Wan Li
 
 import tensorflow as tf
@@ -30,7 +30,7 @@ def LinearRankNetRec(feature_dim, init_model_dir=None, save_model_dir='LinearRan
     def serve_input_graph(subgraph):
         subgraph['X'] = tf.placeholder(tf.float32, shape=[None, feature_dim], name="X")
         subgraph.register_global_input_mapping({'x': subgraph['X']})
-    
+
     @rec.traingraph.fusiongraph(ins=['X1', 'X2'], outs=['dy_tilde'])
     def train_fushion_graph(subgraph):
         logits_1 = fully_connected_layer.apply(subgraph['X1'], [1], subgraph,
@@ -44,7 +44,7 @@ def LinearRankNetRec(feature_dim, init_model_dir=None, save_model_dir='LinearRan
             bias_in=True, bias_mid=True, bias_out=True, batch_norm=False,
             train=False, l2_reg=l2_reg, scope='Weights1dTensor')
         subgraph['dy_tilde'] = tf.squeeze(logits_1 - logits_2)
-    
+
     @rec.traingraph.interactiongraph(ins=['dy_tilde', 'dy'])
     def train_interaction_graph(subgraph):
         loss = tf.nn.sigmoid_cross_entropy_with_logits(labels=subgraph['dy'], logits=subgraph['dy_tilde'], name='loss')

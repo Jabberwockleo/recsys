@@ -11,7 +11,7 @@ import numpy as np
 
 from recsys.samplers.sampler_base import Sampler
 
-def create_training_sampler(dataset, featurizer, max_pos_neg_per_user=5, num_process=5, seed=100):
+def create_training_sampler(dataset, featurizer, max_pos_neg_per_user=5, num_process=5, seed=100, batch_size=10):
     """
         Creates a ranknet sampler for training:
         Params:
@@ -34,11 +34,9 @@ def create_training_sampler(dataset, featurizer, max_pos_neg_per_user=5, num_pro
             assume n positive samples, m negative samples for each user, 2mn samples per user, 2 samples per iteration
         """
         dim = featurizer.feature_dim()
+        input_data = None
+        sample_cnt = 0
         while True:
-            input_data = np.zeros(2, dtype=[
-                ('x1', (np.float32, dim)),
-                ('x2', (np.float32, dim)),
-                ('label', np.int32)])
             # get a random user
             user_id = random.randint(0, dataset.total_users()-1)
             # get positive items
@@ -55,9 +53,21 @@ def create_training_sampler(dataset, featurizer, max_pos_neg_per_user=5, num_pro
                 for neg_item in neg_items:
                     pos_x = featurizer.featurize(user_id, pos_item)
                     neg_x = featurizer.featurize(user_id, neg_item)
-                    input_data[0] = (pos_x, neg_x, 1)
-                    input_data[1] = (neg_x, pos_x, 0)
-                    yield input_data # (2,) per iteration
+                    sample = np.zeros(2, dtype=[
+                        ('x1', (np.float32, dim)),
+                        ('x2', (np.float32, dim)),
+                        ('label', np.int32)])
+                    sample[0] = (pos_x, neg_x, 1)
+                    sample[1] = (neg_x, pos_x, 0)
+                    if input_data is None:
+                        input_data = sample
+                    else:
+                        input_data = np.hstack([input_data, sample])
+                    sample_cnt += 1
+                    if sample_cnt == batch_size:                        
+                        yield input_data # (2*batch_size,) per iteration
+                        input_data = None
+                        sample_cnt = 0
         raise "unreachable!"
     s = Sampler(dataset=dataset, generate_batch=batch, evaluation_type="SAMPLED", featurizer=featurizer, num_process=num_process)
     
@@ -98,28 +108,27 @@ def create_evaluation_sampler(dataset, featurizer, max_pos_neg_per_user=20, seed
                 neg_items = random.sample(neg_items, max_pos_neg_per_user)
                 if len(neg_items) == 0:
                     continue
+                labels = []
+                input_data = None
                 for pos_item in pos_items:
                     sample = np.zeros(1, dtype=[('x', (np.float32, dim))])
                     x = featurizer.featurize(user_id, pos_item)
                     sample[0] = tuple([x])
-                    input_data = None
                     if input_data is None:
                         input_data = sample
                     else:
-                        input_data = np.hstack(input_date, sample)
-                    labels = [1]
-                    yield labels, input_data
+                        input_data = np.hstack([input_data, sample])
+                    labels.append(1)
                 for neg_item in neg_items:
                     sample = np.zeros(1, dtype=[('x', (np.float32, dim))])
                     x = featurizer.featurize(user_id, neg_item)
                     sample[0] = tuple([x])
-                    input_data = None
                     if input_data is None:
                         input_data = sample
                     else:
-                        input_data = np.hstack(input_date, sample)
-                    labels = [-1]
-                    yield labels, input_data # (1,) per iteration
+                        input_data = np.hstack([input_data, sample])
+                    labels.append(-1)
+                yield labels, input_data # (m+n,) per iteration
                 yield [], [] # signals end of one user after batches
             yield None, None # signal finish
     s = Sampler(dataset=dataset, generate_batch=batch, evaluation_type="SAMPLED", featurizer=featurizer, num_process=1)
