@@ -6,7 +6,7 @@
 # Last Modified Date: 25.07.2019
 # Last Modified By  : Wan Li
 
-import imp
+import importlib as imp
 import sys
 import numpy as np
 sys.path = list(set(sys.path + ['../../']))
@@ -91,7 +91,7 @@ auc_evaluator = auc.AUC()
 import recsys.recommenders.linear_recommender as linear_recommender
 linear_recommender = imp.reload(linear_recommender)
 model = linear_recommender.LinearRankNetRec(feature_dim=featurizer_iris.feature_dim(),
-    init_model_dir=None, save_model_dir='LinearRankNetRec', l2_reg=0.1, train=True, serve=True)
+    init_model_dir=None, save_model_dir='LinearRankNetRec', l2_reg=None, train=True, serve=True)
 
 
 # create model trainer with model
@@ -119,13 +119,14 @@ model.export(export_model_dir="pbModel", as_text=False)
 # inspect internal op tensor value of training
 b = train_sampler.next_batch()
 print("data:", b)
-print("dy_tilde:", model.train_inspect_ports(batch_data=b, ports=model.traingraph.fusiongraph["dy_tilde"]))
+print("dy, dy_tilde:", model.train_inspect_ports(batch_data=b, ports=model.traingraph.get_outputs()))
+print("loss:", model.train_inspect_ports(batch_data=b, ports=model.traingraph.get_losses()))
 
 
 # inspect internal op tensor value of testing
-b = test_sampler.next_batch()[1]
+b = test_sampler.next_batch()
 print("data:", b)
-print("score:", model.serve_inspect_ports(batch_data=b, ports=model.servegraph.fusiongraph.get_global_outputs()))
+print("score:", model.serve_inspect_ports(batch_data=b[1], ports=model.servegraph.get_outputs()))
 
 
 # inspect internal graph weights

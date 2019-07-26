@@ -13,6 +13,7 @@ import recsys.modules.extractions.fully_connected_layer as fully_connected_layer
 def LinearRankNetRec(feature_dim, init_model_dir=None, save_model_dir='LinearRankNetRec', l2_reg=None, train=True, serve=False):
     """
         Linear Represented RankNet Recommender
+        Model: F(X) -> score
     """
     rec = recommender_base.Recommender(init_model_dir=init_model_dir,
         save_model_dir=save_model_dir, train=train, serve=serve)
@@ -31,26 +32,25 @@ def LinearRankNetRec(feature_dim, init_model_dir=None, save_model_dir='LinearRan
         subgraph['X'] = tf.placeholder(tf.float32, shape=[None, feature_dim], name="X")
         subgraph.register_global_input_mapping({'x': subgraph['X']})
 
-    @rec.traingraph.fusiongraph(ins=['X1', 'X2'], outs=['dy_tilde'])
+    @rec.traingraph.interactiongraph(ins=['X1', 'X2', 'dy'])
     def train_fushion_graph(subgraph):
         logits_1 = fully_connected_layer.apply(subgraph['X1'], [1], subgraph,
             relu_in=False, relu_mid=False, relu_out=False,
             dropout_in=None, dropout_mid=None, dropout_out=None,
             bias_in=True, bias_mid=True, bias_out=True, batch_norm=False,
             train=False, l2_reg=l2_reg, scope='Weights1dTensor')
-        logits_2 = fully_connected_layer.apply(subgraph['X1'], [1], subgraph,
+        logits_2 = fully_connected_layer.apply(subgraph['X2'], [1], subgraph,
             relu_in=False, relu_mid=False, relu_out=False,
             dropout_in=None, dropout_mid=None, dropout_out=None,
             bias_in=True, bias_mid=True, bias_out=True, batch_norm=False,
             train=False, l2_reg=l2_reg, scope='Weights1dTensor')
-        subgraph['dy_tilde'] = tf.squeeze(logits_1 - logits_2)
-
-    @rec.traingraph.interactiongraph(ins=['dy_tilde', 'dy'])
-    def train_interaction_graph(subgraph):
-        loss = tf.nn.sigmoid_cross_entropy_with_logits(labels=subgraph['dy'], logits=subgraph['dy_tilde'], name='loss')
+        dy_tilde = tf.squeeze(logits_1 - logits_2)
+        loss = tf.nn.sigmoid_cross_entropy_with_logits(labels=subgraph['dy'], logits=dy_tilde, name='loss')
+        subgraph.register_global_output(subgraph['dy'])
+        subgraph.register_global_output(dy_tilde)
         subgraph.register_global_loss(tf.reduce_mean(loss))
 
-    @rec.servegraph.fusiongraph(ins=['X'])
+    @rec.servegraph.interactiongraph(ins=['X'])
     def serve_fusion_graph(subgraph):
         logit = fully_connected_layer.apply(subgraph['X'], [1], subgraph,
             relu_in=False, relu_mid=False, relu_out=False,
@@ -67,14 +67,13 @@ def LinearRankNetRec(feature_dim, init_model_dir=None, save_model_dir='LinearRan
 
     @rec.traingraph.connector
     def train_connect(graph):
-        graph.fusiongraph['X1'] = graph.inputgraph['X1']
-        graph.fusiongraph['X2'] = graph.inputgraph['X2']
+        graph.interactiongraph['X1'] = graph.inputgraph['X1']
+        graph.interactiongraph['X2'] = graph.inputgraph['X2']
         graph.interactiongraph['dy'] = graph.inputgraph['dy']
-        graph.interactiongraph['dy_tilde'] = graph.fusiongraph['dy_tilde']
 
     @rec.servegraph.connector
     def serve_connect(graph):
-        graph.fusiongraph['X'] = graph.inputgraph['X']
+        graph.interactiongraph['X'] = graph.inputgraph['X']
 
     return rec
 
