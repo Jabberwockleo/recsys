@@ -42,7 +42,7 @@ def apply(in_tensor, dims, subgraph, relu_in=False, relu_mid=True, relu_out=Fals
 
             if add_bias:
                 _bias = tf.get_variable('bias_' + '_' + str(index), shape=[_out_dim], trainable=True,
-                    initializer=tf.constant_initializer(value=0.0, dtype=tf.float32))
+                    initializer=tf.truncated_normal_initializer(mean=0.0, stddev=0.01, dtype=tf.float32))
                 _out = tf.matmul(_in, mat) + _bias
             else:
                 _out = tf.matmul(_in, mat)
