@@ -33,6 +33,7 @@ def apply(in_tensor, dims, subgraph, relu_in=False, relu_mid=True, relu_out=Fals
             mat = tf.get_variable('FC_' + '_' + str(index),
                 shape=[_in.shape[1], _out_dim], trainable=True,
                 initializer=tf.contrib.layers.xavier_initializer())
+            tf.summary.histogram('FC' + '_' + str(index) + '/weights', mat)
             if index == 0:
                 add_bias = bias_in
             elif index == len(dims) - 1:
@@ -43,6 +44,7 @@ def apply(in_tensor, dims, subgraph, relu_in=False, relu_mid=True, relu_out=Fals
             if add_bias:
                 _bias = tf.get_variable('bias_' + '_' + str(index), shape=[_out_dim], trainable=True,
                     initializer=tf.truncated_normal_initializer(mean=0.0, stddev=0.01, dtype=tf.float32))
+                tf.summary.histogram('FC' + '_' + str(index) + '/bias', _bias)
                 _out = tf.matmul(_in, mat) + _bias
             else:
                 _out = tf.matmul(_in, mat)
@@ -68,4 +70,5 @@ def apply(in_tensor, dims, subgraph, relu_in=False, relu_mid=True, relu_out=Fals
                 # add to global loss,  accumulated by tf.add_n() for optimizer later
                 subgraph.register_global_loss(l2_reg * tf.nn.l2_loss(var))
 
+        tf.summary.histogram('FC' + '/out', _out)
         return _out

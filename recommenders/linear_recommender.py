@@ -49,6 +49,9 @@ def LinearRankNetRec(feature_dim, init_model_dir=None, save_model_dir='LinearRan
         subgraph.register_global_loss(tf.reduce_mean(loss))
         subgraph.register_global_output(subgraph['dy'])
         subgraph.register_global_output(dy_tilde)
+        tf.summary.scalar('loss', tf.reduce_mean(loss))
+        summary = tf.summary.merge_all()
+        subgraph.register_global_summary(summary)
 
     @rec.servegraph.interactiongraph(ins=['X'])
     def serve_fusion_graph(subgraph):

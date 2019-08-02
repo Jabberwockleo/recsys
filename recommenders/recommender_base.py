@@ -204,6 +204,12 @@ class _RecommenderGraph(object):
                 Delegator
             """
             self._super.register_output(output, identifier)
+
+        def register_global_summary(self, summary, identifier='default'):
+            """
+                Delegator
+            """
+            self._super.register_summary(summary, identifier)
         
         def get_global_input_mapping(self, identifier='default'):
             """
@@ -228,6 +234,12 @@ class _RecommenderGraph(object):
                 Delegator
             """
             return self._super.get_outputs(identifier)
+
+        def get_global_summarys(self, identifier='default'):
+            """
+                Delegator
+            """
+            self._super.get_summarys(identifier)
 
     class _Connector(object):
         """
@@ -298,6 +310,7 @@ class _RecommenderGraph(object):
         self._loss_identifier_set = set() # tensor identifiers for loss (retrieved by tf.get_collection())
         self._output_identifier_set = set() # tensor identifiers for output (retrieved by tf.get_collection())
         self._input_mapping_dict = dict() # dict[identifier](dict[name]tensor) for feed dict
+        self._summary_identifier_set = set() # tensor identifiers for summary (retrieved by tf.get_collection())
 
     def __setattr__(self, name, value):
         """
@@ -383,6 +396,13 @@ class _RecommenderGraph(object):
         self._output_identifier_set.add(identifier)
         tf.add_to_collection('recsys.recommender.outputs.'+identifier, output)
 
+    def register_summary(self, summary, identifier='default'):
+        """
+            Register identifiers for computation graph
+        """
+        self._summary_identifier_set.add(identifier)
+        tf.add_to_collection('recsys.recommender.summarys.' + identifier, summary)
+
     def get_input_mapping(self, identifier='default'):
         """
             Get dict[name]tensor input for computation graph
@@ -410,6 +430,12 @@ class _RecommenderGraph(object):
         with self._tf_graph.as_default():
             return tf.get_collection('recsys.recommender.outputs.'+identifier)
 
+    def get_summarys(self, identifier='default'):
+        """
+            Get list of summary tensors for computation graph
+        """
+        with self._tf_graph.as_default():
+            return tf.get_collection('recsys.recommender.summarys.' + identifier)
 
 class Recommender(object):
     """
@@ -450,6 +476,7 @@ class Recommender(object):
                 config.gpu_options.allow_growth=True
                 self._tf_train_sess = tf.Session(config=config)
                 self._tf_train_sess.run(tf.global_variables_initializer())
+                self._tf_train_writer = tf.summary.FileWriter(self._save_model_dir + "/logs", self._tf_train_sess.graph)
                 self._tf_train_saver = tf.train.Saver(tf.global_variables(), max_to_keep=10)
 
         if self._serve:
@@ -476,7 +503,8 @@ class Recommender(object):
         """
         return self._flag_isbuilt
 
-    def train(self, batch_data, input_mapping_id='default', operations_id='default', losses_id='default', outputs_id='default'):
+    def train(self, batch_data, input_mapping_id='default', operations_id='default',
+              losses_id='default', outputs_id='default', summary_id = 'default'):
         """
             Train
             Run build() first
@@ -507,11 +535,15 @@ class Recommender(object):
         else:
             outputs = self.T.get_outputs(outputs_id)
         
-        results = self._tf_train_sess.run(operations+losses+outputs,
+        if summary_id is None:
+            summarys = []
+        else:
+            summarys = self.T.get_summarys(summary_id)
+        results = self._tf_train_sess.run([summarys, operations, losses, outputs],
                                  feed_dict=feed_dict)
-        
-        return_dict = {'losses': results[len(operations):len(operations)+len(losses)],
-                      'outputs': results[-len(outputs):]}
+        return_dict = {'losses': results[2],
+                      'outputs': results[3],
+                      'summarys': results[0]}
         
         self._flag_updated = True
         return return_dict
@@ -742,6 +774,12 @@ class Recommender(object):
         results = self._tf_serve_sess.run(ports,
                                  feed_dict=feed_dict)
         return results
+
+    def train_writer_handler(self):
+        """
+            Get log writer handler        
+        """
+        return self._tf_train_writer
 
 if __name__ == "__main__":
     rec = Recommender()

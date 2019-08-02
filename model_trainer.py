@@ -10,6 +10,7 @@ from termcolor import colored
 from recsys.evaluation_manager import EvaluationManager
 import sys
 import numpy as np
+import tensorflow as tf
 
 
 class ModelTrainer(object):
@@ -24,10 +25,10 @@ class ModelTrainer(object):
                evaluate_predict_func: compute batch output
         """
         self._model = model
+
         # self._serve_batch_size = serve_batch_size
         if not self._model.isbuilt():
             self._model.build()
-        
         if train_loss_func is None:
             self._train_loss_func = self._default_train_loss_func
         else:
@@ -39,12 +40,14 @@ class ModelTrainer(object):
             self._evaluate_predict_func = evaluate_predict_func
         
         self._trained_it = 0 # iteration number
+        self._train_writer = self._model.train_writer_handler()
     
     def _default_train_loss_func(self, model, batch_data):
         """
            Default training loss
         """
-        return np.sum(model.train(batch_data)['losses'])
+        result_dict = model.train(batch_data)
+        return np.sum(result_dict['losses']), result_dict['summarys']
     
     def _default_evaluate_predict_func(self, model, batch_data):
         """
@@ -136,23 +139,31 @@ class ModelTrainer(object):
         
         for _iter in range(total_iter):
             batch_data = train_sampler.next_batch()
-            loss = self._train_loss_func(self._model, batch_data)
+            loss, train_summary = self._train_loss_func(self._model, batch_data)
             accumulated_loss += loss
             self._trained_it += 1
             print('..Trained for %d iterations.' % _iter, end='\r')
             if (_iter + 1) % save_iter == 0:
+                self._train_writer.add_summary(train_summary[0], _iter)
                 self._model.save(global_step=self._trained_it)
                 print(' '*len('..Trained for %d iterations.' % _iter), end='\r')
                 print(colored('[iter %d]' % self._trained_it, 'red'), 'Model saved.')
             if (_iter + 1) % eval_iter == 0:
                 print(' '*len('..Trained for %d iterations.' % _iter), end='\r')
                 print(colored('[iter %d]' % self._trained_it, 'red'), 'loss: %f' % (accumulated_loss/eval_iter))
+                summary_loss = tf.Summary()
+                summary_loss.value.add(tag="eva_loss_tag", simple_value=(accumulated_loss/eval_iter))
+                self._train_writer.add_summary(summary_loss, _iter)
                 for sampler in eval_samplers:
                     print(colored('..(dataset: %s) evaluation' % sampler.name, 'green'))
                     sys.stdout.flush()
                     eval_results = self._evaluate(sampler)
                     for key, result in eval_results.items():
                         average_result = np.mean(result, axis=0)
+                        summary_eva = tf.Summary()
+                        summary_eva.value.add(tag=key, simple_value=average_result)
+                        self._train_writer.add_summary(summary_eva, _iter)
+                        
                         if type(average_result) is np.ndarray:
                             print(colored('..(dataset: %s)' % sampler.name, 'green'), \
                                 key, ' '.join([str(s) for s in average_result]))
