@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# File              : featurizer.py
+# File              : plain_featurizer.py
 # Author            : Wan Li
 # Date              : 23.07.2019
-# Last Modified Date: 23.07.2019
+# Last Modified Date: 02.08.2019
 # Last Modified By  : Wan Li
 
-class FeaturizerBase(object):
+class PlainFeaturizer(object):
     """
         Featurizer is for combining side information of user/item to a vector
     """

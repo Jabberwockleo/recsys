@@ -49,9 +49,9 @@ train_dataset = dataset.Dataset(data_train, total_users=1, total_items=len(fea_d
 test_dataset = dataset.Dataset(data_test, total_users=1, total_items=len(fea_dict), implicit_negative=False, name='Test')
 
 # create featurizer for mapping: (user, item) -> vector
-import recsys.featurizer as featurizer
-featurizer = imp.reload(featurizer)
-class Featurizer(featurizer.FeaturizerBase):
+import recsys.featurizers.plain_featurizer as plain_featurizer
+plain_featurizer = imp.reload(plain_featurizer)
+class Featurizer(plain_featurizer.PlainFeaturizer):
     """
         Custom featurizer
     """
