@@ -6,12 +6,11 @@
 # Last Modified Date: 26.01.2019
 # Last Modified By  : Wan Li
 
-from termcolor import colored
-from recsys.evaluation_manager import EvaluationManager
 import sys
 import numpy as np
+from termcolor import colored
 import tensorflow as tf
-
+from recsys.evaluation_manager import EvaluationManager
 
 class ModelTrainer(object):
     """

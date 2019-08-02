@@ -32,7 +32,7 @@ def apply(in_tensor, dims, subgraph, relu_in=False, relu_mid=True, relu_out=Fals
         for index, _out_dim in enumerate(dims):
             mat = tf.get_variable('FC_' + '_' + str(index),
                 shape=[_in.shape[1], _out_dim], trainable=True,
-                initializer=tf.contrib.layers.xavier_initializer())
+                initializer=tf.initializers.truncated_normal())
             tf.summary.histogram('FC' + '_' + str(index) + '/weights', mat)
             if index == 0:
                 add_bias = bias_in
