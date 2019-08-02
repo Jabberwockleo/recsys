@@ -18,6 +18,8 @@ def apply(sequence, seq_len):
             tensor of averaged representation, shaped (batch_size, 1, embedding_size)
     """
     seq_mask = tf.sequence_mask(seq_len, tf.shape(sequence)[1], dtype=tf.float32)
-    avg_tensor = tf.reduce_mean(sequence * tf.expand_dims(seq_mask, axis=2), axis=1)
+    sum_tensor = tf.reduce_sum(sequence * tf.expand_dims(seq_mask, axis=2), axis=1)
+    avg_tensor = tf.math.divide(sum_tensor,
+        tf.expand_dims(tf.dtypes.cast(seq_len, tf.float32), axis=1))
     return avg_tensor
     
