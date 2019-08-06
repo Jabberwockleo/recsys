@@ -66,9 +66,10 @@ def create_training_sampler(dataset, featurizer, max_pos_neg_per_user=5, num_pro
         fea_context_hour_dim = featurizer.fea_context_hour_dim()
         input_data = None
         sample_cnt = 0
+        warm_users = dataset.warm_users(threshold=max_pos_neg_per_user)
         while True:
             # get a random user
-            user_id = random.randint(0, dataset.total_users()-1)
+            user_id = random.sample(warm_users, 1)[0]
             # get positive items
             pos_items = dataset.get_positive_items(user_id, sort=False)
             pos_items = random.sample(pos_items, max_pos_neg_per_user)
