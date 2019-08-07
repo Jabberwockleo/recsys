@@ -252,5 +252,7 @@ def create_evaluation_sampler(dataset, featurizer, max_pos_neg_per_user=20, seed
             yield None, None # signal finish
     s = Sampler(dataset=dataset, generate_batch=batch, evaluation_type="SAMPLED", featurizer=featurizer, num_process=1)
 
+    return s
+
 if __name__ == "__main__":
     pass
