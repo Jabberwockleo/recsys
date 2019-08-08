@@ -87,17 +87,17 @@ def create_training_sampler(dataset, featurizer, max_pos_neg_per_user=5, num_pro
                     pos_dict = featurizer.featurize(user_id, pos_item)
                     neg_dict = featurizer.featurize(user_id, neg_item)
                     sample = np.zeros(2, dtype=[
-                        ('user_demography_vec', (np.float32, fea_user_demography_dim)),
-                        ('user_stat_vec', (np.float32, fea_user_stat_dim)),
-                        ('user_history_vec', (np.float32, fea_user_history_dim)),
+                        ('user_demography_vec', np.float32, (fea_user_demography_dim,)),
+                        ('user_stat_vec', np.float32, (fea_user_stat_dim,)),
+                        ('user_history_vec', np.float32, (fea_user_history_dim,)),
                         ('user_history_len', np.int32),
-                        ('item_meta_vec_1', (np.float32, fea_item_meta_dim)),
-                        ('item_stat_vec_1', (np.float32, fea_item_stat_dim)),
+                        ('item_meta_vec_1', np.float32, (fea_item_meta_dim,)),
+                        ('item_stat_vec_1', np.float32, (fea_item_stat_dim,)),
                         ('item_id_1', np.int32),
-                        ('item_meta_vec_2', (np.float32, fea_item_meta_dim)),
-                        ('item_stat_vec_2', (np.float32, fea_item_stat_dim)),
+                        ('item_meta_vec_2', np.float32, (fea_item_meta_dim,)),
+                        ('item_stat_vec_2', np.float32, (fea_item_stat_dim,)),
                         ('item_id_2', np.int32),
-                        ('context_hour', (np.float32, fea_context_hour_dim)),
+                        ('context_hour', np.float32, (fea_context_hour_dim,)),
                         ('label', np.int32)])
                     sample[0] = (
                         pos_dict['user_demography_vec'],
@@ -209,14 +209,14 @@ def create_evaluation_sampler(dataset, featurizer, max_pos_neg_per_user=20, seed
                 input_data = None
                 for pos_item in pos_items:
                     sample = np.zeros(1, dtype=[
-                        ('user_demography_vec', (np.float32, fea_user_demography_dim)),
-                        ('user_stat_vec', (np.float32, fea_user_stat_dim)),
-                        ('user_history_vec', (np.float32, fea_user_history_dim)),
+                        ('user_demography_vec', np.float32, (fea_user_demography_dim,)),
+                        ('user_stat_vec', np.float32, (fea_user_stat_dim,)),
+                        ('user_history_vec', np.float32, (fea_user_history_dim,)),
                         ('user_history_len', np.int32),
-                        ('item_meta_vec', (np.float32, fea_item_meta_dim)),
-                        ('item_stat_vec', (np.float32, fea_item_stat_dim)),
+                        ('item_meta_vec', np.float32, (fea_item_meta_dim,)),
+                        ('item_stat_vec', np.float32, (fea_item_stat_dim,)),
                         ('item_id', np.int32),
-                        ('context_hour', (np.float32, fea_context_hour_dim))])
+                        ('context_hour', np.float32, (fea_context_hour_dim,))])
                     fea_dict = featurizer.featurize(user_id, pos_item)
                     sample[0] = (
                         fea_dict['user_demography_vec'],
@@ -234,14 +234,14 @@ def create_evaluation_sampler(dataset, featurizer, max_pos_neg_per_user=20, seed
                     labels.append(1)
                 for neg_item in neg_items:
                     sample = np.zeros(1, dtype=[
-                        ('user_demography_vec', (np.float32, fea_user_demography_dim)),
-                        ('user_stat_vec', (np.float32, fea_user_stat_dim)),
-                        ('user_history_vec', (np.float32, fea_user_history_dim)),
+                        ('user_demography_vec', np.float32, (fea_user_demography_dim,)),
+                        ('user_stat_vec', np.float32, (fea_user_stat_dim,)),
+                        ('user_history_vec', np.float32, (fea_user_history_dim,)),
                         ('user_history_len', np.int32),
-                        ('item_meta_vec', (np.float32, fea_item_meta_dim)),
-                        ('item_stat_vec', (np.float32, fea_item_stat_dim)),
+                        ('item_meta_vec', np.float32, (fea_item_meta_dim,)),
+                        ('item_stat_vec', np.float32, (fea_item_stat_dim,)),
                         ('item_id', np.int32),
-                        ('context_hour', (np.float32, fea_context_hour_dim))])
+                        ('context_hour', np.float32, (fea_context_hour_dim,))])
                     fea_dict = featurizer.featurize(user_id, neg_item)
                     sample[0] = (
                         fea_dict['user_demography_vec'],
