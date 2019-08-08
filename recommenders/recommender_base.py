@@ -476,8 +476,8 @@ class Recommender(object):
                 config.gpu_options.allow_growth=True
                 self._tf_train_sess = tf.Session(config=config)
                 self._tf_train_sess.run(tf.global_variables_initializer())
-                self._tf_train_writer = tf.summary.FileWriter(self._save_model_dir + "/logs", self._tf_train_sess.graph)
                 self._tf_train_saver = tf.train.Saver(tf.global_variables(), max_to_keep=10)
+                self._tf_train_writer = tf.summary.FileWriter(self._save_model_dir + "/logs", self._tf_train_sess.graph)
 
         if self._serve:
             self.servegraph.build()

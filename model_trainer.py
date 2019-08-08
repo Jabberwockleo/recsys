@@ -39,7 +39,6 @@ class ModelTrainer(object):
             self._evaluate_predict_func = evaluate_predict_func
         
         self._trained_it = 0 # iteration number
-        self._train_writer = self._model.train_writer_handler()
     
     def _default_train_loss_func(self, model, batch_data):
         """
@@ -143,7 +142,7 @@ class ModelTrainer(object):
             self._trained_it += 1
             print('..Trained for %d iterations.' % _iter, end='\r')
             if (_iter + 1) % save_iter == 0:
-                self._train_writer.add_summary(train_summary[0], _iter)
+                self._model.train_writer().add_summary(train_summary[0], _iter)
                 self._model.save(global_step=self._trained_it)
                 print(' '*len('..Trained for %d iterations.' % _iter), end='\r')
                 print(colored('[iter %d]' % self._trained_it, 'red'), 'Model saved.')
@@ -152,7 +151,7 @@ class ModelTrainer(object):
                 print(colored('[iter %d]' % self._trained_it, 'red'), 'loss: %f' % (accumulated_loss/eval_iter))
                 summary_loss = tf.Summary()
                 summary_loss.value.add(tag="eva_loss_tag", simple_value=(accumulated_loss/eval_iter))
-                self._train_writer.add_summary(summary_loss, _iter)
+                self._model.train_writer().add_summary(summary_loss, _iter)
                 for sampler in eval_samplers:
                     print(colored('..(dataset: %s) evaluation' % sampler.name, 'green'))
                     sys.stdout.flush()
@@ -161,7 +160,7 @@ class ModelTrainer(object):
                         average_result = np.mean(result, axis=0)
                         summary_eva = tf.Summary()
                         summary_eva.value.add(tag=key, simple_value=average_result)
-                        self._train_writer.add_summary(summary_eva, _iter)
+                        self._model.train_writer().add_summary(summary_eva, _iter)
                         
                         if type(average_result) is np.ndarray:
                             print(colored('..(dataset: %s)' % sampler.name, 'green'), \

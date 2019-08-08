@@ -17,7 +17,7 @@ import recsys.modules.interactions.fm_layer as fm_layer
 def FeedsFMRecommender(fea_user_demography_dim, fea_user_stat_dim, fea_user_history_dim,
     fea_item_meta_dim, fea_item_stat_dim, fea_context_hour_dim,
     total_item_num, embedding_dim=128,
-    factor_dim=7, init_model_dir=None, save_model_dir="FeedsFMRec", l2_reg=None, train=True, serve=False):
+    factor_dim=7, init_model_dir=None, save_model_dir="FeedsFMRec", l2_reg=None, train=True, serve=True):
     """
         Feeds recommender for industrial purposes
         Model: F(X) -> score
@@ -138,7 +138,6 @@ def FeedsFMRecommender(fea_user_demography_dim, fea_user_stat_dim, fea_user_hist
             shape=[total_item_num, embedding_dim],
             subgraph=subgraph,
             scope="ItemEmbedding")
-        item_embedded_tensor = tf.squeeze(item_embedded_tensor)
         subgraph["item_vec"] = concatenate.apply([
             subgraph["item_meta_vec"], subgraph["item_stat_vec"], item_embedded_tensor])
         pass
@@ -205,7 +204,7 @@ def FeedsFMRecommender(fea_user_demography_dim, fea_user_stat_dim, fea_user_hist
         pass
 
     @rec.traingraph.connector
-    @rec.traingraph.connector
+    @rec.servegraph.connector
     def connector(graph):
         graph.usergraph["user_demography_vec"] = graph.inputgraph["user_demography_vec"]
         graph.usergraph["user_stat_vec"] = graph.inputgraph["user_stat_vec"]
