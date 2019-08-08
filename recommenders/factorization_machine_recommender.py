@@ -3,7 +3,7 @@
 # File              : factorization_machine_recommender.py
 # Author            : Wan Li
 # Date              : 26.07.2019
-# Last Modified Date: 26.07.2019
+# Last Modified Date: 08.08.2019
 # Last Modified By  : Wan Li
 
 import tensorflow as tf
@@ -11,14 +11,15 @@ import recsys.recommenders.recommender_base as recommender_base
 import recsys.modules.interactions.fm_layer as fm_layer
 import recsys.modules.extractions.fully_connected_layer as fully_connected_layer
 
-def FactorizationMachineRecommender(feature_dim, factor_dim=5, init_model_dir=None, save_model_dir='FMRec', l2_reg=None, train=True, serve=True):
+def FactorizationMachineRecommender(feature_dim, factor_dim=5,
+    init_model_dir=None, save_model_dir='FMRec', l2_reg=None, train=True, serve=True):
     """
         Vanilla FM recommender
         Model: F(X) -> score
     """
     rec = recommender_base.Recommender(init_model_dir=init_model_dir,
         save_model_dir=save_model_dir, train=train, serve=serve)
-    
+
     @rec.traingraph.inputgraph(outs=['X1', 'X2', 'dy'])
     def train_input_graph(subgraph):
         subgraph['X1'] = tf.placeholder(tf.float32, shape=[None, feature_dim], name="X1")
@@ -32,7 +33,7 @@ def FactorizationMachineRecommender(feature_dim, factor_dim=5, init_model_dir=No
     def serve_input_graph(subgraph):
         subgraph['X'] = tf.placeholder(tf.float32, shape=[None, feature_dim], name="X")
         subgraph.register_global_input_mapping({'x': subgraph['X']})
-    
+
     @rec.traingraph.interactiongraph(ins=['X1', 'X2', 'dy'])
     def train_fushion_graph(subgraph):
         linear1 = fully_connected_layer.apply(subgraph['X1'], [1], subgraph,
@@ -43,7 +44,7 @@ def FactorizationMachineRecommender(feature_dim, factor_dim=5, init_model_dir=No
         linear1 = tf.squeeze(linear1) # shaped [None, ]
         interactive1 = fm_layer.apply(subgraph['X1'], factor_dim, l2_weight=0.01, scope="InteractiveComponent")
         interactive1 = tf.squeeze(tf.math.reduce_sum(interactive1, axis=1))
-        
+
         linear2 = fully_connected_layer.apply(subgraph['X2'], [1], subgraph,
             relu_in=False, relu_mid=False, relu_out=False,
             dropout_in=None, dropout_mid=None, dropout_out=None,
