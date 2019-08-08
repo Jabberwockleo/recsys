@@ -40,6 +40,11 @@ def FeedsFMRecommender(fea_user_demography_dim, fea_user_stat_dim, fea_user_hist
             shape=[None], name="user_history_len")
         subgraph["context_hour"] = tf.placeholder(tf.float32,
             shape=[None, fea_context_hour_dim], name="context_hour")
+        subgraph.register_global_input_mapping({'user_demography_vec': subgraph['user_demography_vec'],
+                                                'user_stat_vec': subgraph['user_stat_vec'],
+                                                'user_history_vec': subgraph['user_history_vec'],
+                                                'user_history_len': subgraph['user_history_len'],
+                                                'context_hour': subgraph['context_hour']})
         pass
     
     @rec.traingraph.inputgraph.extend(outs=["item_meta_vec_1", "item_stat_vec_1", "item_id_1",
@@ -48,17 +53,24 @@ def FeedsFMRecommender(fea_user_demography_dim, fea_user_stat_dim, fea_user_hist
         subgraph["item_meta_vec_1"] = tf.placeholder(tf.float32,
             shape=[None, fea_item_meta_dim], name="item_meta_vec_1")
         subgraph["item_stat_vec_1"] = tf.placeholder(tf.float32,
-            shape=[None, fea_item_meta_dim], name="item_stat_vec_1")
+            shape=[None, fea_item_stat_dim], name="item_stat_vec_1")
         subgraph["item_id_1"] = tf.placeholder(tf.int32,
             shape=[None], name="item_id_1")
         subgraph["item_meta_vec_2"] = tf.placeholder(tf.float32,
             shape=[None, fea_item_meta_dim], name="item_meta_vec_2")
         subgraph["item_stat_vec_2"] = tf.placeholder(tf.float32,
-            shape=[None, fea_item_meta_dim], name="item_stat_vec_2")
+            shape=[None, fea_item_stat_dim], name="item_stat_vec_2")
         subgraph["item_id_2"] = tf.placeholder(tf.int32,
             shape=[None], name="item_id_2")
         subgraph["dy"] = tf.placeholder(tf.float32,
             shape=[None], name="label")
+        subgraph.update_global_input_mapping({'item_meta_vec_1': subgraph['item_meta_vec_1'],
+                                                'item_stat_vec_1': subgraph['item_stat_vec_1'],
+                                                'item_id_1': subgraph['item_id_1'],
+                                                'item_meta_vec_2': subgraph['item_meta_vec_2'],
+                                                'item_stat_vec_2': subgraph['item_stat_vec_2'],
+                                                'item_id_2': subgraph['item_id_2'],
+                                                'label': subgraph['dy']})
         pass
 
     @rec.servegraph.inputgraph.extend(outs=["item_meta_vec", "item_stat_vec", "item_id"])
@@ -66,9 +78,12 @@ def FeedsFMRecommender(fea_user_demography_dim, fea_user_stat_dim, fea_user_hist
         subgraph["item_meta_vec"] = tf.placeholder(tf.float32,
             shape=[None, fea_item_meta_dim], name="item_meta_vec")
         subgraph["item_stat_vec"] = tf.placeholder(tf.float32,
-            shape=[None, fea_item_meta_dim], name="item_stat_vec")
+            shape=[None, fea_item_stat_dim], name="item_stat_vec")
         subgraph["item_id"] = tf.placeholder(tf.int32,
             shape=[None], name="item_id")
+        subgraph.update_global_input_mapping({'item_meta_vec': subgraph['item_meta_vec'],
+                                                'item_stat_vec': subgraph['item_stat_vec'],
+                                                'item_id': subgraph['item_id']})
         pass
 
     @rec.traingraph.usergraph(ins=["user_demography_vec", "user_stat_vec", "user_history_vec", "user_history_len"],

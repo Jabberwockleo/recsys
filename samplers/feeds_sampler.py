@@ -3,7 +3,7 @@
 # File              : feeds_sampler.py
 # Author            : Wan Li
 # Date              : 01.08.2019
-# Last Modified Date: 02.08.2019
+# Last Modified Date: 08.08.2019
 # Last Modified By  : Wan Li
 
 import random
@@ -237,10 +237,10 @@ def create_evaluation_sampler(dataset, featurizer, max_pos_neg_per_user=20, seed
                         ('user_demography_vec', (np.float32, fea_user_demography_dim)),
                         ('user_stat_vec', (np.float32, fea_user_stat_dim)),
                         ('user_history_vec', (np.float32, fea_user_history_dim)),
-                        ('user_history_len', np.int32)
+                        ('user_history_len', np.int32),
                         ('item_meta_vec', (np.float32, fea_item_meta_dim)),
                         ('item_stat_vec', (np.float32, fea_item_stat_dim)),
-                        ('item_id', np.int32)
+                        ('item_id', np.int32),
                         ('context_hour', (np.float32, fea_context_hour_dim))])
                     fea_dict = featurizer.featurize(user_id, neg_item)
                     sample[0] = (
