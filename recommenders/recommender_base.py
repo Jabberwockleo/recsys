@@ -775,7 +775,7 @@ class Recommender(object):
                                  feed_dict=feed_dict)
         return results
 
-    def train_writer_handler(self):
+    def train_writer(self):
         """
             Get log writer handler        
         """
