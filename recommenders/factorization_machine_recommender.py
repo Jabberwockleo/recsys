@@ -11,7 +11,7 @@ import recsys.recommenders.recommender_base as recommender_base
 import recsys.modules.interactions.fm_layer as fm_layer
 import recsys.modules.extractions.fully_connected_layer as fully_connected_layer
 
-def FactorizationMachineRecommender(feature_dim, factor_dim=5, init_model_dir=None, save_model_dir='FMRec', l2_reg=None, train=True, serve=False):
+def FactorizationMachineRecommender(feature_dim, factor_dim=5, init_model_dir=None, save_model_dir='FMRec', l2_reg=None, train=True, serve=True):
     """
         Vanilla FM recommender
         Model: F(X) -> score
