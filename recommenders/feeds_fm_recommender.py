@@ -3,7 +3,7 @@
 # File              : feeds_fm_recommender.py
 # Author            : Wan Li
 # Date              : 01.08.2019
-# Last Modified Date: 01.08.2019
+# Last Modified Date: 08.08.2019
 # Last Modified By  : Wan Li
 
 import tensorflow as tf
@@ -24,7 +24,7 @@ def FeedsFMRecommender(fea_user_demography_dim, fea_user_stat_dim, fea_user_hist
     """
     rec = recommender_base.Recommender(init_model_dir=init_model_dir,
         save_model_dir=save_model_dir, train=train, serve=serve)
-    
+
     @rec.traingraph.inputgraph(outs=["user_demography_vec", "user_stat_vec",
         "user_history_vec", "user_history_len", "context_hour"])
     @rec.servegraph.inputgraph(outs=["user_demography_vec", "user_stat_vec",
@@ -46,7 +46,7 @@ def FeedsFMRecommender(fea_user_demography_dim, fea_user_stat_dim, fea_user_hist
                                                 'user_history_len': subgraph['user_history_len'],
                                                 'context_hour': subgraph['context_hour']})
         pass
-    
+
     @rec.traingraph.inputgraph.extend(outs=["item_meta_vec_1", "item_stat_vec_1", "item_id_1",
         "item_meta_vec_2", "item_stat_vec_2", "item_id_2", "dy"])
     def train_inputgraph(subgraph):
@@ -102,7 +102,7 @@ def FeedsFMRecommender(fea_user_demography_dim, fea_user_stat_dim, fea_user_hist
         subgraph["user_vec"] = concatenate.apply([
             subgraph["user_demography_vec"], subgraph["user_stat_vec"], user_history_repr])
         pass
-    
+
     @rec.traingraph.contextgraph(ins=["context_hour"], outs=["context_vec"])
     @rec.servegraph.contextgraph(ins=["context_hour"], outs=["context_vec"])
     def contextgraph(subgraph):
@@ -160,18 +160,18 @@ def FeedsFMRecommender(fea_user_demography_dim, fea_user_stat_dim, fea_user_hist
             dropout_in=None, dropout_mid=None, dropout_out=None,
             bias_in=True, bias_mid=True, bias_out=True, batch_norm=False,
             train=False, l2_reg=l2_reg, scope="LinearComponent")
-        linear1 = tf.squeeze(linear1) # shaped [None, ]
+        linear1 = tf.reshape(linear1, shape=[-1]) # shaped [None, ]
         interactive1 = fm_layer.apply(subgraph["X_1"], factor_dim, l2_weight=0.01, scope="InteractiveComponent")
-        interactive1 = tf.squeeze(tf.math.reduce_sum(interactive1, axis=1))
-        
+        interactive1 = tf.reshape(tf.math.reduce_sum(interactive1, axis=1), shape=[-1])
+
         linear2 = fully_connected_layer.apply(subgraph["X_2"], [1], subgraph,
             relu_in=False, relu_mid=False, relu_out=False,
             dropout_in=None, dropout_mid=None, dropout_out=None,
             bias_in=True, bias_mid=True, bias_out=True, batch_norm=False,
             train=False, l2_reg=l2_reg, scope="LinearComponent")
-        linear2 = tf.squeeze(linear2)
+        linear2 = tf.reshape(linear2, shape=[-1]) # shaped [None, ]
         interactive2 = fm_layer.apply(subgraph["X_2"], factor_dim, l2_weight=0.01, scope="InteractiveComponent")
-        interactive2 = tf.squeeze(tf.math.reduce_sum(interactive2, axis=1))
+        interactive2 = tf.reshape(tf.math.reduce_sum(interactive2, axis=1), shape=[-1])
         dy_tilde = (linear1 + interactive1) - (linear2 + interactive2)
         loss = tf.nn.sigmoid_cross_entropy_with_logits(labels=subgraph["dy"], logits=dy_tilde, name="loss")
         subgraph.register_global_loss(tf.reduce_mean(loss))
@@ -189,9 +189,9 @@ def FeedsFMRecommender(fea_user_demography_dim, fea_user_stat_dim, fea_user_hist
             dropout_in=None, dropout_mid=None, dropout_out=None,
             bias_in=True, bias_mid=True, bias_out=True, batch_norm=False,
             train=False, l2_reg=l2_reg, scope="LinearComponent")
-        linear = tf.squeeze(linear) # shaped [None, ]
+        linear = tf.reshape(linear, shape=[-1]) # shaped [None, ]
         interactive = fm_layer.apply(subgraph["X"], factor_dim, l2_weight=0.01, scope="InteractiveComponent") # shaped [None, factor_dim]
-        interactive = tf.squeeze(tf.math.reduce_sum(interactive, axis=1))
+        interactive = tf.reshape(tf.math.reduce_sum(interactive, axis=1), shape=[-1])
         score = linear + interactive
         subgraph.register_global_output(score)
         pass
