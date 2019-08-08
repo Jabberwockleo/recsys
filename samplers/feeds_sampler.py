@@ -124,7 +124,7 @@ def create_training_sampler(dataset, featurizer, max_pos_neg_per_user=5, num_pro
                         pos_dict['item_stat_vec'],
                         pos_dict['item_id'],
                         pos_dict['context_hour'],
-                        1)
+                        0)
                     if input_data is None:
                         input_data = sample
                     else:
