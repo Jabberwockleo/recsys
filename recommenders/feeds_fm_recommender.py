@@ -176,6 +176,9 @@ def FeedsFMRecommender(fea_user_demography_dim, fea_user_stat_dim, fea_user_hist
         dy_tilde = (linear1 + interactive1) - (linear2 + interactive2)
         loss = tf.nn.sigmoid_cross_entropy_with_logits(labels=subgraph["dy"], logits=dy_tilde, name="loss")
         subgraph.register_global_loss(tf.reduce_mean(loss))
+        tf.summary.scalar('loss', tf.reduce_mean(loss))
+        summary = tf.summary.merge_all()
+        subgraph.register_global_summary(summary)
         subgraph.register_global_output(subgraph["dy"])
         subgraph.register_global_output(dy_tilde)
         pass
