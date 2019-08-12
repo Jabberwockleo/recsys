@@ -32,21 +32,21 @@ class ModelTrainer(object):
             self._train_loss_func = self._default_train_loss_func
         else:
             self._train_loss_func = train_loss_func
-        
+
         if evaluate_predict_func is None:
             self._evaluate_predict_func = self._default_evaluate_predict_func
         else:
             self._evaluate_predict_func = evaluate_predict_func
-        
+
         self._trained_it = 0 # iteration number
-    
+
     def _default_train_loss_func(self, model, batch_data):
         """
            Default training loss
         """
         result_dict = model.train(batch_data)
         return np.sum(result_dict['losses']), result_dict['summarys']
-    
+
     def _default_evaluate_predict_func(self, model, batch_data):
         """
             Default predict outputs
@@ -63,7 +63,7 @@ class ModelTrainer(object):
             metric_results = {} # dict[evaluator_name]list(evaluation result for users)
             for evaluator in self._eval_manager.evaluators:
                 metric_results[evaluator.name] = []
-        
+
             completed_user_count = 0
             pos_items, batch_data = eval_sampler.next_batch()
             while batch_data is not None:
@@ -87,7 +87,7 @@ class ModelTrainer(object):
             metric_results = {} # dict[evaluator_name]list(evaluation result for users)
             for evaluator in self._eval_manager.evaluators:
                 metric_results[evaluator.name] = []
-        
+
             completed_user_count = 0
             # data_labels [1, 1, ... -1, -1] 1 for pos_item, -1 for neg_item r.s.t a user
             data_labels, batch_data = eval_sampler.next_batch()
@@ -112,7 +112,7 @@ class ModelTrainer(object):
                 print('...Evaluated %d users' % completed_user_count, end='\r')
                 for key in result:
                     metric_results[key].append(result[key])
-                pos_items, batch_data = eval_sampler.next_batch()
+                data_labels, batch_data = eval_sampler.next_batch()
             return metric_results
         else:
             raise "Sampler's evaluation_type() is unrecognized."
@@ -127,14 +127,14 @@ class ModelTrainer(object):
         """
         accumulated_loss = 0
         self._eval_manager = EvaluationManager(evaluators=evaluators)
-        
+
         train_sampler.reset()
         for sampler in eval_samplers:
             sampler.reset()
-        
+
         print(colored('[Training starts, total_iter: %d, eval_iter: %d, save_iter: %d]' \
                           % (total_iter, eval_iter, save_iter), 'blue'))
-        
+
         for _iter in range(total_iter):
             batch_data = train_sampler.next_batch()
             loss, train_summary = self._train_loss_func(self._model, batch_data)
@@ -161,7 +161,6 @@ class ModelTrainer(object):
                         summary_eva = tf.Summary()
                         summary_eva.value.add(tag=key, simple_value=average_result)
                         self._model.train_writer().add_summary(summary_eva, _iter)
-                        
                         if type(average_result) is np.ndarray:
                             print(colored('..(dataset: %s)' % sampler.name, 'green'), \
                                 key, ' '.join([str(s) for s in average_result]))

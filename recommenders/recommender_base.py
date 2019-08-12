@@ -7,8 +7,9 @@
 # Last Modified By  : Wan Li
 
 import tensorflow as tf
+from tensorflow.python import debug as tf_debug
 import numpy as np
-import os  
+import os
 
 class _RecommenderGraph(object):
     """
@@ -26,7 +27,7 @@ class _RecommenderGraph(object):
                 """
                 """
                 self.s = None
-        
+
         class _InPort(_Port):
             """
                 Inputs of component graph
@@ -39,7 +40,7 @@ class _RecommenderGraph(object):
                         key: key of the outputs of upstream graph
                 """
                 self.s = {'subgraph':subgraph, 'key':key}
-            
+
             def retrieve(self):
                 """
                     Retrieve input from upstream output
@@ -76,7 +77,7 @@ class _RecommenderGraph(object):
             self._build_funcs = []
             self._is_building_mode = False # False for connector connecting ports, True for building computation graph
             self._is_built = False
-            
+
         def __getitem__(self, key):
             """
                 Getter [], get InPorts or OutPorts, behaviour is different in modes
@@ -89,7 +90,7 @@ class _RecommenderGraph(object):
             else:
                 assert isinstance(self._port_store[key], self._OutPort), "[Connect Error] Getting a value from the %s in-port" % key
                 return self, key # corresponds to InPort::assign(subgraph, key)
-        
+
         def __setitem__(self, key, value):
             """
                 Setter [], set InPorts or OutPorts, behaviour is different in modes
@@ -109,15 +110,15 @@ class _RecommenderGraph(object):
             """
             assert isinstance(ins, list), "ins should be a list of strings."
             assert isinstance(outs, list), "outs should be a list of strings"
-            
+
             self._port_store = {}
             self._build_funcs = []
-            
+
             for in_ in ins:
                 self._port_store[in_] = self._InPort()
             for out_ in outs:
                 self._port_store[out_] = self._OutPort()
-            
+
             if build_func is None:
                 def add_build_func(build_func):
                     self._build_funcs.append(build_func)
@@ -133,12 +134,12 @@ class _RecommenderGraph(object):
             """
             assert isinstance(ins, list), "ins should be a list of strings."
             assert isinstance(outs, list), "outs should be a list of strings"
-            
+
             for in_ in ins:
                 self._port_store[in_] = self._InPort()
             for out_ in outs:
                 self._port_store[out_] = self._OutPort()
-            
+
             if build_func is None:
                 def add_build_func(build_func):
                     self._build_funcs.append(build_func)
@@ -165,7 +166,7 @@ class _RecommenderGraph(object):
                 Mark as building mode
             """
             self._is_building_mode = True
-            
+
         def build(self):
             """
                 Do the build stuff of this component graph
@@ -180,7 +181,7 @@ class _RecommenderGraph(object):
                 Delegator
             """
             self._super.register_input_mapping(input_mapping, identifier)
-        
+
         def update_global_input_mapping(self, update_input_mapping, identifier='default'):
             """
                 Delegator
@@ -210,7 +211,7 @@ class _RecommenderGraph(object):
                 Delegator
             """
             self._super.register_summary(summary, identifier)
-        
+
         def get_global_input_mapping(self, identifier='default'):
             """
                 Delegator
@@ -228,7 +229,7 @@ class _RecommenderGraph(object):
                 Delegator
             """
             return self._super.get_losses(identifier)
-            
+
         def get_global_outputs(self, identifier='default'):
             """
                 Delegator
@@ -253,7 +254,7 @@ class _RecommenderGraph(object):
             """
             self._global_graph = global_graph
             self._connect_funcs = []
-        
+
         def __call__(self, connect_func=None):
             """
                 Caller (), decorator function
@@ -269,7 +270,7 @@ class _RecommenderGraph(object):
                 # default usage
                 self._connect_funcs.append(connect_func)
             return connect_func
-        
+
         def extend(self, connect_func=None):
             """
                 Decorator function, non-reset
@@ -282,7 +283,7 @@ class _RecommenderGraph(object):
             else:
                 self._connect_funcs.append(connect_func)
             return connect_func
-        
+
         def build(self):
             """
                 Perform connection component graphs
@@ -305,7 +306,7 @@ class _RecommenderGraph(object):
         self.optimizergraph = self._SubGraph(self)
 
         self.connector = self._Connector(self)
-        
+
         self._operation_identifier_set = set() # operation identifiers for optimizer etc. (retrieved by tf.get_collection())
         self._loss_identifier_set = set() # tensor identifiers for loss (retrieved by tf.get_collection())
         self._output_identifier_set = set() # tensor identifiers for output (retrieved by tf.get_collection())
@@ -315,7 +316,7 @@ class _RecommenderGraph(object):
     def __setattr__(self, name, value):
         """
             Setter of main graph
-        """        
+        """
         if name in set(['inputgraph', 'usergraph', 'itemgraph', 'contextgraph',
                       'fusiongraph', 'interactiongraph', 'optimizergraph']):
             if name in self.__dict__:
@@ -328,7 +329,7 @@ class _RecommenderGraph(object):
     @property
     def tf_graph(self):
         """
-            Property getter            
+            Property getter
         """
         return self._tf_graph
 
@@ -337,7 +338,7 @@ class _RecommenderGraph(object):
              Build the main graph
          """
          with self._tf_graph.as_default():
-            
+
             self.connector.build()
 
             self.inputgraph.ready_to_build()
@@ -347,7 +348,7 @@ class _RecommenderGraph(object):
             self.fusiongraph.ready_to_build()
             self.interactiongraph.ready_to_build()
             self.optimizergraph.ready_to_build()
-            
+
             with tf.variable_scope('inputgraph', reuse=tf.AUTO_REUSE):
                 self.inputgraph.build()
             with tf.variable_scope('usergraph', reuse=tf.AUTO_REUSE):
@@ -360,7 +361,7 @@ class _RecommenderGraph(object):
                 self.fusiongraph.build()
             with tf.variable_scope('interactiongraph', reuse=tf.AUTO_REUSE):
                 self.interactiongraph.build()
-            with tf.variable_scope('optimizergraph', reuse=tf.AUTO_REUSE):  
+            with tf.variable_scope('optimizergraph', reuse=tf.AUTO_REUSE):
                 self.optimizergraph.build()
 
     def register_input_mapping(self, input_mapping, identifier='default'):
@@ -368,11 +369,11 @@ class _RecommenderGraph(object):
             Register identifiers for computation graph
         """
         self._input_mapping_dict[identifier] = input_mapping
-    
+
     def update_input_mapping(self, update_input_mapping, identifier='default'):
         """
             Update identifiers for computation graph
-        """        
+        """
         self._input_mapping_dict[identifier].update(update_input_mapping)
 
     def register_operation(self, operation, identifier='default'):
@@ -455,10 +456,10 @@ class Recommender(object):
         self._serve = serve
         self._init_model_dir = init_model_dir
         self._save_model_dir = save_model_dir
-        
+
         self._flag_updated = False # mark updated by training, needs updating serving graph
         self._flag_isbuilt = False # only after graph is built can it be used to train/serve
-        
+
         self.traingraph = _RecommenderGraph() # main graph
         self.servegraph = _RecommenderGraph() # main graph
 
@@ -475,6 +476,7 @@ class Recommender(object):
                 config = tf.ConfigProto()
                 config.gpu_options.allow_growth=True
                 self._tf_train_sess = tf.Session(config=config)
+                # self._tf_train_sess = tf_debug.LocalCLIDebugWrapperSession(tf.Session(config=config))
                 self._tf_train_sess.run(tf.global_variables_initializer())
                 self._tf_train_saver = tf.train.Saver(tf.global_variables(), max_to_keep=10)
                 self._tf_train_writer = tf.summary.FileWriter(self._save_model_dir + "/logs", self._tf_train_sess.graph)
@@ -487,16 +489,16 @@ class Recommender(object):
                 self._tf_serve_sess = tf.Session(config=config)
                 self._tf_serve_sess.run(tf.global_variables_initializer())
                 self._tf_serve_saver = tf.train.Saver(tf.global_variables(), max_to_keep=10)
-        
+
         if self._init_model_dir is not None:
             self.restore(save_model_dir=self._init_model_dir,
                         restore_train=self._train,
                         restore_serve=self._serve)
-        
+
         self._flag_isbuilt = True
-        
+
         return self
-    
+
     def isbuilt(self):
         """
             Is built
@@ -513,28 +515,28 @@ class Recommender(object):
         """
         assert self._train, "Train is disabled"
         assert self._flag_isbuilt, "Train graph is not built"
-        
+
         if input_mapping_id is None:
             feed_dict = {}
         else:
-            feed_dict = self._generate_feed_dict(batch_data, 
+            feed_dict = self._generate_feed_dict(batch_data,
                                             self.T.get_input_mapping(input_mapping_id))
-        
+
         if operations_id is None:
             operations = []
         else:
             operations = self.T.get_operations(operations_id)
-        
+
         if losses_id is None:
             losses = []
         else:
             losses = self.T.get_losses(losses_id)
-            
+
         if outputs_id is None:
             outputs = []
         else:
             outputs = self.T.get_outputs(outputs_id)
-        
+
         if summary_id is None:
             summarys = []
         else:
@@ -544,7 +546,7 @@ class Recommender(object):
         return_dict = {'losses': results[2],
                       'outputs': results[3],
                       'summarys': results[0]}
-        
+
         self._flag_updated = True
         return return_dict
 
@@ -557,36 +559,36 @@ class Recommender(object):
         """
         assert self._serve, "serve is disabled"
         assert self._flag_isbuilt, "serve graph is not built"
-        
+
         if self._flag_updated:
             self._save_and_load_for_serve()
             self._flag_updated = False
-        
+
         if input_mapping_id is None:
             feed_dict = {}
         else:
             feed_dict = self._generate_feed_dict(batch_data, self.S.get_input_mapping(input_mapping_id))
-        
+
         if operations_id is None:
             operations = []
         else:
             operations = self.S.get_operations(operations_id)
-        
+
         if losses_id is None:
             losses = []
         else:
             losses = self.S.get_losses(losses_id)
-            
+
         if outputs_id is None:
             outputs = []
         else:
             outputs = self.S.get_outputs(outputs_id)
-        results = self._tf_serve_sess.run(operations+losses+outputs, 
+        results = self._tf_serve_sess.run(operations+losses+outputs,
                             feed_dict=feed_dict)
 
-        return {'losses': results[len(operations):len(operations)+len(losses)], 
+        return {'losses': results[len(operations):len(operations)+len(losses)],
                 'outputs': results[-len(outputs):]}
-    
+
     def export(self, export_model_dir=None, input_mapping_id='default', outputs_id='default',
             top_k=None, as_text=False):
         """
@@ -671,7 +673,7 @@ class Recommender(object):
         if save_model_dir is None:
             save_model_dir = self._save_model_dir
         with self.traingraph.tf_graph.as_default():
-            self._tf_train_saver.save(self._tf_train_sess, 
+            self._tf_train_saver.save(self._tf_train_sess,
                 os.path.join(save_model_dir, 'model.ckpt'), global_step=global_step)
 
     def restore(self, save_model_dir=None, restore_train=False, restore_serve=False):
@@ -697,7 +699,7 @@ class Recommender(object):
                 input_map: dict[name]tensor
         """
         feed_dict = dict()
-        
+
         if type(batch_data) is np.ndarray:
             keys = batch_data.dtype.names
         elif type(batch_data) is dict:
@@ -714,15 +716,15 @@ class Recommender(object):
             Restore necessary variables in computation graph
         """
         reader = tf.train.NewCheckpointReader(save_file)
-        saved_shapes = reader.get_variable_to_shape_map() 
-        
+        saved_shapes = reader.get_variable_to_shape_map()
+
         restore_vars = []
         for var in tf.global_variables():
             var_name = var.name.split(':')[0]
             if var_name in saved_shapes and len(var.shape) > 0:
                 if var.get_shape().as_list() == saved_shapes[var_name]:
                     restore_vars.append(var)
-        
+
         saver = tf.train.Saver(restore_vars)
         saver.restore(session, save_file)
 
@@ -744,10 +746,10 @@ class Recommender(object):
         """
         assert self._train, "Train is disabled"
         assert self._flag_isbuilt, "Train graph is not built"
-        
-        feed_dict = self._generate_feed_dict(batch_data, 
+
+        feed_dict = self._generate_feed_dict(batch_data,
                                             self.T.get_input_mapping(input_mapping_id))
-        
+
         results = self._tf_train_sess.run(ports,
                                  feed_dict=feed_dict)
         return results
@@ -760,24 +762,24 @@ class Recommender(object):
         """
         assert self._serve, "serve graph is disabled"
         assert self._flag_isbuilt, "serve graph is not built"
-        
+
         if self._flag_updated:
             self._save_and_load_for_serve()
             self._flag_updated = False
-        
+
         if input_mapping_id is None:
             feed_dict = {}
         else:
-            feed_dict = self._generate_feed_dict(batch_data, 
+            feed_dict = self._generate_feed_dict(batch_data,
                                             self.S.get_input_mapping(input_mapping_id))
-        
+
         results = self._tf_serve_sess.run(ports,
                                  feed_dict=feed_dict)
         return results
 
     def train_writer(self):
         """
-            Get log writer handler        
+            Get log writer handler
         """
         return self._tf_train_writer
 

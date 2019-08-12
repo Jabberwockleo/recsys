@@ -26,7 +26,7 @@ class AUC(Metric):
                 rank_above: list[positive_list_index]aboved_negative_item_count
                 negative_num: total number of negative items
         """
-        return np.mean(1 - rank_above / negative_num) # mean(1 - FPR), because TPR is smooth
+        return np.mean(1 - rank_above / (negative_num + 1e-2)) # mean(1 - FPR), because TPR is smooth
 
 if __name__ == "__main__":
     ins = AUC([50])
